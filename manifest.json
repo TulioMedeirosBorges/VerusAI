@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "analiser FakeNews",
+  "version": "2.1.0",
+  "description": "Analise de Noticias",
+  "permissions": [],
+  "host_permissions": ["https://www.instagram.com/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/image/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["captureFrames.js", "analyzeWithClaude.js", "content.js"],
+      "css": ["style.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Analiser FakeNews",
+    "default_popup": "popup.html"
+  }
+}
