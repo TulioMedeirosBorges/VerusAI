@@ -17,6 +17,8 @@
       ".article-body",
       ".content",
       "#content",
+      ".noticias",
+      "#noticias",
     ];
 
     for (const selector of selectors) {
