@@ -8,24 +8,40 @@
   window[STYLE_GUARD] = true;
 
   function getVisibleArticle() {
-    const articles = document.querySelectorAll("article");
-    let bestArticle = null;
-    let bestVisibility = 0;
+    // Tenta article primeiro (Instagram, sites de notícia)
+    const selectors = [
+      "article",
+      "main",
+      '[role="main"]',
+      ".post-content",
+      ".article-body",
+      ".content",
+      "#content",
+    ];
 
-    for (const article of articles) {
-      const rect = article.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const visibleTop = Math.max(0, rect.top);
-      const visibleBottom = Math.min(windowHeight, rect.bottom);
-      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+    for (const selector of selectors) {
+      const elements = document.querySelectorAll(selector);
+      let best = null;
+      let bestVisibility = 0;
 
-      if (visibleHeight > bestVisibility) {
-        bestVisibility = visibleHeight;
-        bestArticle = article;
+      for (const el of elements) {
+        const rect = el.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const visibleTop = Math.max(0, rect.top);
+        const visibleBottom = Math.min(windowHeight, rect.bottom);
+        const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+
+        if (visibleHeight > bestVisibility) {
+          bestVisibility = visibleHeight;
+          best = el;
+        }
       }
+
+      if (best) return best;
     }
 
-    return bestArticle;
+    // Fallback: pega o body inteiro
+    return document.body;
   }
 
   function expandPost(article) {
@@ -80,6 +96,7 @@
 
       const text = article.innerText;
       const video = article.querySelector("video");
+      const img = article.querySelector("img");
 
       button.textContent = "Analisando...";
       button.disabled = true;
@@ -90,7 +107,8 @@
         const frames = await captureFrames(video);
         analysis = await analyzeWithClaude(text, frames);
       } else {
-        analysis = await analyzeWithClaude(text, []);
+        const imageUrl = img ? img.src : null;
+        analysis = await analyzeWithClaude(text, [], imageUrl);
       }
 
       const open = document.createElement("aside");
