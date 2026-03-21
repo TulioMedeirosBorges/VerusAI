@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="/style/styleRegister.css" />
+  </head>
+  <body id="bodyExtensionRegister">
+    <header id="headerPageRegister">
+      <div class="headerRegister">
+        <div class="imgRegister">
+          <img
+            id="logoRegister"
+            src="/assets/image/LogoAosFatosAtivo 2.svg"
+            alt=""
+          />
+        </div>
+        <div class="menuRegister">
+          <div id="closeIcon"></div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="mainRegister">
+        <div class="inputRegister">
+          <div class="E-mailRegister">
+            <label for="email">E-mail</label><br />
+            <input
+              type="email"
+              class="emailRegister"
+              id="E-mailRegister"
+              placeholder="Digite seu e-mail"
+            />
+            <span class="erro" id="erroEmail"></span>
+          </div>
+          <div class="SenhaRegister">
+            <label for="password">Senha</label><br />
+            <input
+              type="password"
+              class="passwordRegister"
+              id="PasswordRegister"
+              placeholder="Digite sua senha"
+            />
+            <span class="erro" id="erroSenha"></span>
+          </div>
+          <div class="SenhaConfirmRegister">
+            <label for="password">Confirme sua senha</label><br />
+            <input
+              type="password"
+              class="passwordConfirmRegister"
+              id="PasswordConfirmRegister"
+              placeholder="Digite sua senha"
+            />
+            <span class="erro" id="erroSenhaConfirm"></span>
+          </div>
+        </div>
+        <div class="buttonRegister">
+          <div class="buttonConfirmRegister">
+            <button id="confirmRegister">
+              <p>Confirmar</p>
+            </button>
+          </div>
+          <div class="login">
+            <p>Already have an account?<a href="./popup.html">Log In</a></p>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script type="module" src="/js/public/popup.js"></script>
+    <script type="module" src="/js/public/register.js"></script>
+  </body>
+</html>

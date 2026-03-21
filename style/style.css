@@ -1,0 +1,47 @@
+#sidebar_id {
+  position: fixed;
+  right: 20px;
+  bottom: 70px;
+  z-index: 41235123;
+  margin: 0;
+  width: 300px;
+  height: 500px;
+  background-color: white;
+  border-radius: 20px;
+  overflow-y: auto;
+}
+
+#textAnalysis {
+  color: #000000;
+}
+
+#header {
+  display: flex;
+  background-color: blue;
+  width: 300px;
+  height: 100px;
+  justify-content: center;
+  justify-items: center;
+  align-items: center;
+}
+
+#logo {
+  width: 200px;
+  height: 100px;
+}
+
+#btn_id {
+  position: fixed;
+  right: 16px;
+  bottom: 24px;
+  z-index: 2147483647;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #ff7a59, #ff2a6d);
+  color: #000000;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}

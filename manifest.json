@@ -7,20 +7,30 @@
   "host_permissions": ["<all_urls>"],
   "web_accessible_resources": [
     {
-      "resources": ["assets/image/*"],
+      "resources": ["assets/image/*", "assets/icons/*"],
       "matches": ["<all_urls>"]
     }
   ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["captureFrames.js", "analyzeWithClaude.js", "content.js"],
-      "css": ["style.css", "stylePopUp.css"],
+      "js": [
+        "js/private/captureFrames.js",
+        "js/private/analyzeWithClaude.js",
+        "js/public/content.js",
+        "js/public/popup.js",
+        "js/public/icon.js"
+      ],
+      "css": [
+        "style/style.css",
+        "style/stylePopUp.css",
+        "style/styleRegister.css"
+      ],
       "run_at": "document_idle"
     }
   ],
   "action": {
     "default_title": "Analiser FakeNews",
-    "default_popup": "popup.html"
+    "default_popup": "pages/popup.html"
   }
 }

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/style/stylePopUp.css" />
+
+    <title>Analiser FakeNews</title>
+  </head>
+  <body id="bodyExtension">
+    <header id="headerPage">
+      <div class="header">
+        <div class="img">
+          <img id="logo" src="/assets/image/LogoAosFatosAtivo 2.svg" alt="" />
+        </div>
+        <div class="menu">
+          <div id="closeIcon"></div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="main">
+        <div class="input">
+          <div class="E-mail">
+            <label for="email">E-mail</label><br />
+            <input
+              type="email"
+              class="email"
+              id="E-mail"
+              placeholder="Digite seu e-mail"
+            />
+          </div>
+          <div class="Senha">
+            <label for="password">Senha</label><br />
+            <input
+              type="password"
+              class="password"
+              id="Password"
+              placeholder="Digite sua senha"
+            />
+          </div>
+        </div>
+        <div class="button">
+          <div class="buttonConfirm">
+            <button id="confirm">
+              <p>Confirmar</p>
+            </button>
+          </div>
+          <div class="googleButton">
+            <button class="google" id="Google">
+              <div id="googleIcon"></div>
+              <p>Continue with Google</p>
+            </button>
+          </div>
+          <div class="logup">
+            <p>
+              Don´t you have an account? <a href="./register.html">log up</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script type="module" src="/js/public/popup.js"></script>
+    <script type="module" src="/js/public/register.js"></script>
+  </body>
+</html>
