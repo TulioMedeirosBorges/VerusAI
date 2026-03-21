@@ -84,10 +84,17 @@
 .erro {
   color: red;
   font-size: 12px;
-  margin-top: 4px;
-  display: block;
+  display: flex;
+  align-items: center;
+  max-width: 230px;
 }
-
+.icon-warning {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  padding-right: 5px;
+  padding-bottom: 2px;
+}
 /* Borda vermelha no campo com erro */
 input.input-erro {
   border: 1px solid red;

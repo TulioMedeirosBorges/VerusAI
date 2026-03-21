@@ -1,3 +1,9 @@
+import { Icons } from "./icon.js";
+
+document.getElementById("closeIcon").addEventListener("click", () => {
+  window.close();
+});
+
 const botao = document.getElementById("confirmRegister");
 
 function emailValido(email) {
@@ -21,44 +27,56 @@ botao.addEventListener("click", async () => {
   const temEspecial = /[!@#$%&*()_+\-=?/]/.test(senha);
 
   if (!email) {
-    mostrarErro(emailInput, "erroEmail", "Preencha o e-mail.");
+    mostrarErro(
+      emailInput,
+      "erroEmail",
+      `${Icons("warning")}Preencha o e-mail.`,
+    );
     temErro = true;
   } else if (!emailValido(email)) {
     mostrarErro(
       emailInput,
       "erroEmail",
-      "Digite um e-mail válido. Ex: nome@email.com",
+      `${Icons("warning")}Digite um e-mail válido.`,
     );
     temErro = true;
   }
 
   if (!senha) {
-    mostrarErro(senhaInput, "erroSenha", "Preencha a senha.");
+    mostrarErro(
+      senhaInput,
+      "erroSenha",
+      `${Icons("warning")}Preencha a senha.`,
+    );
     temErro = true;
   } else if (senha.length < 6) {
     mostrarErro(
       senhaInput,
       "erroSenha",
-      "A senha deve ter 6 caracteres e pelo menos um especial",
+      `${Icons("warning")}A senha deve ter 6 caracteres e pelo menos um especial`,
     );
     temErro = true;
   } else if (!temEspecial) {
     mostrarErro(
       senhaInput,
       "erroSenha",
-      "A senha deve conter pelo menos um caractere especial.",
+      `${Icons("warning")}A senha deve conter pelo menos um caractere especial.`,
     );
     temErro = true;
   }
 
   if (!senhaConfirm) {
-    mostrarErro(senhaConfirmInput, "erroSenhaConfirm", "Confirme sua senha.");
+    mostrarErro(
+      senhaConfirmInput,
+      "erroSenhaConfirm",
+      `${Icons("warning")}Confirme sua senha.`,
+    );
     temErro = true;
   } else if (senha !== senhaConfirm) {
     mostrarErro(
       senhaConfirmInput,
       "erroSenhaConfirm",
-      "As senhas não coincidem.",
+      `${Icons("warning")}As senhas não coincidem.`,
     );
     temErro = true;
   }
@@ -86,7 +104,7 @@ botao.addEventListener("click", async () => {
 
 function mostrarErro(input, idSpan, mensagem) {
   input.classList.add("input-erro");
-  document.getElementById(idSpan).textContent = mensagem;
+  document.getElementById(idSpan).innerHTML = mensagem; // textContent → innerHTML
 }
 
 function limparErros() {
