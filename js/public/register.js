@@ -1,4 +1,13 @@
 import { Icons } from "./icon.js";
+["PasswordConfirmRegister"].forEach((id) => {
+  document.getElementById(id).addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      botao.click();
+    }
+  });
+});
+
+document.getElementById("checkIcon").innerHTML = Icons("check");
 
 document.getElementById("closeIcon").addEventListener("click", () => {
   window.close();
@@ -20,7 +29,6 @@ botao.addEventListener("click", async () => {
   const senha = senhaInput.value;
   const senhaConfirm = senhaConfirmInput.value;
 
-  // Limpa erros anteriores
   limparErros();
 
   let temErro = false;
@@ -93,18 +101,40 @@ botao.addEventListener("click", async () => {
     const dados = await resposta.json();
 
     if (resposta.ok) {
-      window.location.href = "./popup.html";
+      mostrarSucesso(); // ✅ aqui
     } else {
-      mostrarErro(emailInput, "erroEmail", dados.erro);
+      mostrarErro(emailInput, "erroEmail", `${Icons("warning")} ${dados.erro}`);
     }
   } catch (err) {
-    mostrarErro(emailInput, "erroEmail", "Erro ao conectar com o servidor.");
+    mostrarErro(
+      emailInput,
+      "erroEmail",
+      `${Icons("warning")} Erro ao conectar com o servidor.`,
+    );
   }
 });
 
+// ✅ Função de sucesso
+function mostrarSucesso() {
+  const tela = document.getElementById("telaSuccesso");
+  tela.classList.add("ativo");
+
+  const barra = document.createElement("div");
+  barra.classList.add("barra-loading");
+  tela.querySelector(".sucesso-conteudo").appendChild(barra);
+
+  setTimeout(() => {
+    barra.style.width = "100%";
+  }, 100);
+
+  setTimeout(() => {
+    window.location.href = "./popup.html";
+  }, 2200);
+}
+
 function mostrarErro(input, idSpan, mensagem) {
   input.classList.add("input-erro");
-  document.getElementById(idSpan).innerHTML = mensagem; // textContent → innerHTML
+  document.getElementById(idSpan).innerHTML = mensagem;
 }
 
 function limparErros() {

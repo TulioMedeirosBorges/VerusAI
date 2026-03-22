@@ -1,4 +1,11 @@
 import { Icons } from "./icon.js";
+["Password"].forEach((id) => {
+  document.getElementById(id).addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      botao.click();
+    }
+  });
+});
 
 document.getElementById("closeIcon").innerHTML = Icons("close");
 document.getElementById("googleIcon").innerHTML = Icons("google");
