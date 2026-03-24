@@ -57,17 +57,21 @@ plus.addEventListener("click", () => {
   salvarConfigs();
 });
 
+// ✅ forEach com leitor incluído
 document.querySelectorAll(".retangle").forEach((btn) => {
   btn.addEventListener("click", () => {
     btn.classList.toggle("ativo");
     const ativo = btn.classList.contains("ativo");
 
-    if (btn.dataset.id === "contraste") {
-      ativarAltoContraste(ativo);
-    }
-
-    if (btn.dataset.id === "tema") {
-      ativarTemaEscuro(ativo);
+    if (btn.dataset.id === "contraste") ativarAltoContraste(ativo);
+    if (btn.dataset.id === "tema") ativarTemaEscuro(ativo);
+    if (btn.dataset.id === "leitornoticias") {
+      if (ativo) {
+        ativarLeitorConfig();
+      } else {
+        speechSynthesis.cancel();
+        document.removeEventListener("mouseup", lerTextoConfig);
+      }
     }
 
     salvarConfigs();
@@ -90,6 +94,24 @@ function ativarTemaEscuro(ativo) {
   }
 }
 
+// ✅ Função separada para poder remover o evento depois
+function lerTextoConfig() {
+  const texto = window.getSelection().toString().trim();
+  if (texto) {
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(texto);
+    utterance.lang = "pt-BR";
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    speechSynthesis.speak(utterance);
+  }
+}
+
+function ativarLeitorConfig() {
+  document.addEventListener("mouseup", lerTextoConfig);
+}
+
 async function salvarConfigs() {
   const toggles = {};
   document.querySelectorAll(".retangle").forEach((btn) => {
@@ -97,8 +119,6 @@ async function salvarConfigs() {
   });
 
   const configs = { fontSize: value, toggles };
-
-  // ✅ Salva no chrome.storage para o content.js ter acesso
   chrome.storage.local.set({ configs });
 
   try {
@@ -134,18 +154,14 @@ async function carregarConfigs() {
       updateBar();
     }
 
+    // ✅ Restaura os toggles incluindo o leitor
     if (toggles) {
       document.querySelectorAll(".retangle").forEach((btn) => {
         if (toggles[btn.dataset.id]) {
           btn.classList.add("ativo");
-
-          if (btn.dataset.id === "contraste") {
-            ativarAltoContraste(true);
-          }
-
-          if (btn.dataset.id === "tema") {
-            ativarTemaEscuro(true);
-          }
+          if (btn.dataset.id === "contraste") ativarAltoContraste(true);
+          if (btn.dataset.id === "tema") ativarTemaEscuro(true);
+          if (btn.dataset.id === "leitornoticias") ativarLeitorConfig();
         }
       });
     }
