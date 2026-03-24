@@ -8,7 +8,6 @@
   window[STYLE_GUARD] = true;
 
   function getVisibleArticle() {
-    // Tenta article primeiro (Instagram, sites de notícia)
     const selectors = [
       "article",
       "main",
@@ -42,7 +41,6 @@
       if (best) return best;
     }
 
-    // Fallback: pega o body inteiro
     return document.body;
   }
 
@@ -119,7 +117,7 @@
         <header id="header">
           <img src="${logo}" alt="" id="logo" />
         </header>
-        <main><p id = "textAnalysis">${analysis}</p></main>
+        <main><p id="textAnalysis">${analysis}</p></main>
         <footer>descrição</footer>
       `;
 
@@ -147,4 +145,52 @@
     childList: true,
     subtree: true,
   });
+
+  // Verifica se o leitor está ativo ao carregar a página
+  chrome.storage.local.get("configs", (resultado) => {
+    const configs = resultado.configs;
+    console.log("Configs ao carregar:", configs);
+    if (configs?.toggles?.leitornoticias) {
+      ativarLeitor();
+    }
+  });
+
+  // Escuta mudanças nas configs em tempo real
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.configs) {
+      console.log("Configs mudaram:", changes.configs.newValue);
+      const novasConfigs = changes.configs.newValue;
+      if (novasConfigs?.toggles?.leitornoticias) {
+        ativarLeitor();
+      } else {
+        desativarLeitor();
+      }
+    }
+  });
+
+  function ativarLeitor() {
+    console.log("Leitor ativado!");
+    document.addEventListener("mouseup", lerTextoSelecionado);
+  }
+
+  function desativarLeitor() {
+    console.log("Leitor desativado!");
+    speechSynthesis.cancel();
+    document.removeEventListener("mouseup", lerTextoSelecionado);
+  }
+
+  function lerTextoSelecionado() {
+    const texto = window.getSelection().toString().trim();
+    if (texto) falar(texto);
+  }
+
+  function falar(texto) {
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(texto);
+    utterance.lang = "pt-BR";
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    speechSynthesis.speak(utterance);
+  }
 })();

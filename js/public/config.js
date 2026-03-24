@@ -57,7 +57,6 @@ plus.addEventListener("click", () => {
   salvarConfigs();
 });
 
-// ✅ Um único forEach para todos os toggles
 document.querySelectorAll(".retangle").forEach((btn) => {
   btn.addEventListener("click", () => {
     btn.classList.toggle("ativo");
@@ -69,10 +68,6 @@ document.querySelectorAll(".retangle").forEach((btn) => {
 
     if (btn.dataset.id === "tema") {
       ativarTemaEscuro(ativo);
-    }
-
-    if (btn.dataset.id === "leitornoticias") {
-      // lógica futura
     }
 
     salvarConfigs();
@@ -101,14 +96,16 @@ async function salvarConfigs() {
     toggles[btn.dataset.id] = btn.classList.contains("ativo");
   });
 
+  const configs = { fontSize: value, toggles };
+
+  // ✅ Salva no chrome.storage para o content.js ter acesso
+  chrome.storage.local.set({ configs });
+
   try {
     await fetch("http://localhost:3000/salvar-configs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: emailUsuario,
-        configs: { fontSize: value, toggles },
-      }),
+      body: JSON.stringify({ email: emailUsuario, configs }),
     });
   } catch (err) {
     console.error("Erro ao salvar configs:", err);
