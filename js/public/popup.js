@@ -120,27 +120,31 @@ document.getElementById("Google").addEventListener("click", () => {
       return;
     }
 
-    // Busca os dados do usuário com o token
-    const resposta = await fetch(
+    const respostaGoogle = await fetch(
       "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
       {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
 
-    const usuario = await resposta.json();
+    const usuarioGoogle = await respostaGoogle.json();
 
-    // Salva o login
+    // ✅ fetch do login-google DENTRO do callback
+    await fetch("http://localhost:3000/login-google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: usuarioGoogle.email,
+        nome: usuarioGoogle.name,
+      }),
+    });
+
+    // ✅ Salva e redireciona DENTRO do callback
     chrome.storage.local.set(
-      { logado: true, email: usuario.email, nome: usuario.name },
+      { logado: true, email: usuarioGoogle.email, nome: usuarioGoogle.name },
       () => {
         window.location.href = "./config.html";
       },
     );
-  });
-});
-await fetch("http://localhost:3000/login-google", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email: usuario.email, nome: usuario.name }),
-});
+  }); // ← fecha o getAuthToken
+}); // ← fecha o addEventListener

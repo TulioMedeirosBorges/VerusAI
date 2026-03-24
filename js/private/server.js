@@ -18,6 +18,11 @@ db.exec(`
   )
 `);
 
+// Adiciona coluna configs se não existir
+try {
+  db.exec("ALTER TABLE usuarios ADD COLUMN configs TEXT DEFAULT '{}'");
+} catch (e) {}
+
 app.post("/register", async (req, res) => {
   const { email, senha } = req.body;
 
@@ -31,7 +36,6 @@ app.post("/register", async (req, res) => {
       "INSERT INTO usuarios (email, senha) VALUES (?, ?)",
     );
     inserir.run(email, senhaCriptografada);
-
     res.status(201).json({ mensagem: "Usuário cadastrado com sucesso!" });
   } catch (err) {
     if (err.message.includes("UNIQUE")) {
@@ -60,7 +64,6 @@ app.post("/login", async (req, res) => {
       .json({ erro: "E-mail não encontrado.", campo: "email" });
   }
 
-  // ✅ Linha que estava faltando
   const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
 
   if (!senhaCorreta) {
@@ -72,9 +75,6 @@ app.post("/login", async (req, res) => {
     .json({ mensagem: "Login realizado com sucesso!", email: usuario.email });
 });
 
-app.listen(3000, () =>
-  console.log("Servidor rodando em http://localhost:3000"),
-);
 app.post("/login-google", async (req, res) => {
   const { email, nome } = req.body;
 
@@ -82,7 +82,6 @@ app.post("/login-google", async (req, res) => {
     return res.status(400).json({ erro: "E-mail não recebido." });
   }
 
-  // Verifica se já existe, se não existir cria
   let usuario = db.prepare("SELECT * FROM usuarios WHERE email = ?").get(email);
 
   if (!usuario) {
@@ -94,3 +93,32 @@ app.post("/login-google", async (req, res) => {
 
   res.status(200).json({ mensagem: "Login com Google realizado!", email });
 });
+
+app.post("/salvar-configs", (req, res) => {
+  const { email, configs } = req.body;
+
+  db.prepare("UPDATE usuarios SET configs = ? WHERE email = ?").run(
+    JSON.stringify(configs),
+    email,
+  );
+
+  res.status(200).json({ mensagem: "Configs salvas!" });
+});
+app.post("/carregar-configs", (req, res) => {
+  const { email } = req.body;
+
+  const usuario = db
+    .prepare("SELECT configs FROM usuarios WHERE email = ?")
+    .get(email);
+
+  if (!usuario) {
+    return res.status(404).json({ erro: "Usuário não encontrado." });
+  }
+
+  res.status(200).json({ configs: JSON.parse(usuario.configs || "{}") });
+});
+
+// ✅ app.listen apenas uma vez e no final
+app.listen(3000, () =>
+  console.log("Servidor rodando em http://localhost:3000"),
+);

@@ -4,9 +4,67 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
+    <link rel="stylesheet" href="/style/configStyle.css" />
   </head>
-  <body>
-    <button id="logoutBtn">Sair</button>
+  <body id="bodyExtension">
+    <header id="headerPage">
+      <div class="header">
+        <div class="img">
+          <img id="logo" src="/assets/image/LogoAosFatosAtivo 2.svg" alt="" />
+        </div>
+        <div class="menu">
+          <div id="closeIcon"></div>
+        </div>
+      </div>
+    </header>
+    <main class="mainConfig">
+      <div class="config">
+        <h1 class="configuracoes">Configurações</h1>
+        <div class="user">
+          <p id="nomeUsuario"></p>
+          <div id="logout">
+            <div id="logoutbtn"></div>
+            <p id="out">Sair</p>
+          </div>
+        </div>
+      </div>
+      <div class="acessivel">
+        <div class="buttons">
+          <div class="title">
+            <h1 class="acessibilidade">Acessibilidade</h1>
+          </div>
+          <div class="tamanhotexto">
+            <p>Tamanho do texto</p>
+            <div class="alttexto">
+              <div id="AaIcon"></div>
+              <div id="less"></div>
+              <div id="bar"></div>
+              <div id="plus"></div>
+            </div>
+          </div>
+          <div class="slideButton">
+            <div class="slides">
+              <p>Alto contraste</p>
+              <div class="retangle" data-id="contraste">
+                <div class="circle"></div>
+              </div>
+            </div>
+            <div class="slides">
+              <p>Tema</p>
+              <div class="retangle" data-id="tema">
+                <div class="circle"></div>
+              </div>
+            </div>
+            <div class="slides">
+              <p>Leitor de Noticia</p>
+              <div class="retangle" data-id="leitornoticias">
+                <div class="circle"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
     <script type="module" src="/js/public/config.js"></script>
   </body>
 </html>
