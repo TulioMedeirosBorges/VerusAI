@@ -12,7 +12,7 @@
   "host_permissions": ["<all_urls>", "http://localhost:3000/*"],
   "web_accessible_resources": [
     {
-      "resources": ["assets/image/*", "assets/icons/*", "js/public/leitor.js"],
+      "resources": ["assets/image/*", "assets/icons/*"],
       "matches": ["<all_urls>"]
     }
   ],

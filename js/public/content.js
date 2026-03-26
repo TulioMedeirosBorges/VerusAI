@@ -117,8 +117,9 @@
         <header id="header">
           <img src="${logo}" alt="" id="logo" />
         </header>
-        <main><p id="textAnalysis">${analysis}</p></main>
-        <footer>descrição</footer>
+        <main><p id="textAnalysis">${analysis.texto}</p></main>
+        <hr/>
+        <footer id="footerAnalysis"><p>Links:${analysis.link}</p></footer>
       `;
 
       document.body.appendChild(open);

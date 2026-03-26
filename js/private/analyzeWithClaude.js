@@ -38,8 +38,7 @@ Se não houver nenhuma notícia detectável na página, informe que não foi pos
                 Se a página tiver um artigo ou notícia, baseie sua análise principalmente nesse conteúdo.
 
                 ⚠️ IMPORTANTE: Execute todas as etapas de análise internamente, 
-                mas NUNCA as exiba na resposta. Retorne APENAS o resultado final,
-                com no máximo 300 caracteres.
+                mas NUNCA as exiba na resposta.
 
                 ---
 
@@ -69,15 +68,12 @@ Se não houver nenhuma notícia detectável na página, informe que não foi pos
 
                 Após extrair a informação, pesquise nos portais de notícias 
                 confiáveis para verificar se essa informação existe, foi 
-                confirmada ou desmentida por fontes jornalísticas. Se a informação 
-                não existir em nenhum portal confiável, isso deve ser informado 
-                claramente no resultado final.
+                confirmada ou desmentida por fontes jornalísticas.
 
                 ---
 
                 ## ANÁLISE INTERNA (não exibir):
-                1. Classifique o conteúdo: Notícia, Opinião, Genérico ou 
-                  Desinformação Aparente
+                1. Classifique o conteúdo: Notícia, Opinião, Genérico ou Desinformação Aparente
                 2. Verifique se há fonte declarada no conteúdo
                 3. Se for Notícia ou Desinformação: pesquise nos portais abaixo
                 4. Se for Genérico ou Opinião: apenas resuma e encerre
@@ -102,7 +98,6 @@ Se não houver nenhuma notícia detectável na página, informe que não foi pos
                 ---
 
                 ## VERIFICAÇÃO DE LINKS (OBRIGATÓRIO):
-
                 Antes de incluir qualquer link na resposta, você DEVE:
                 1. Confirmar que o link existe e leva diretamente à notícia
                 2. Testar se a URL está correta e acessível
@@ -110,59 +105,29 @@ Se não houver nenhuma notícia detectável na página, informe que não foi pos
 
                 ⚠️ PROIBIDO: Inventar, completar, supor ou modificar qualquer URL.
                 Se o link não puder ser 100% confirmado, NÃO o inclua na resposta.
-                Um link inventado é pior que nenhum link.
 
                 ---
 
-                ## PESQUISA NO GOOGLE
+                ## FORMATO DE RESPOSTA OBRIGATÓRIO:
+                
+                Retorne APENAS um JSON válido, sem texto fora do JSON, sem markdown, sem blocos de código:
+                
+                {
+                  "texto": "resumo da análise com no máximo 200 caracteres",
+                  "link": "<a href='URL_CONFIRMADA' target='_blank'>Nome do Portal</a>"
+                }
 
-                Se não encontrar a informação diretamente nos portais confiáveis,
-                realize uma busca no Google como recurso secundário.
-
-                ⚠️ REGRA IMPORTANTE SOBRE RESULTADOS DO GOOGLE:
-                O Google é apenas um mecanismo de busca e não é uma fonte confiável
-                por si só. Se o único resultado encontrado vier de uma busca genérica
-                no Google — sem apontar para um dos portais confiáveis listados —
-                você DEVE retornar a seguinte mensagem no lugar do link:
-
-                "⚠️ FONTE GENÉRICA — Esta informação foi encontrada via Google,
-                porém não está disponível em nenhum portal jornalístico confiável.
-                Não é possível verificar sua veracidade com total credibilidade."
-
-                Apenas resultados que apontem diretamente para um dos portais
-                confiáveis listados devem ser incluídos como links verificados.
-                Resultados de blogs, redes sociais, fóruns ou sites desconhecidos
-                encontrados via Google devem ser completamente ignorados.
-
-                ---
-
-                ## FORMATO DE RESPOSTA (APENAS ISSO DEVE SER EXIBIDO):
-
-                ### SE for informação/notícia verificada:
-                Notícia:
-                [Resumo de até 200 caracteres sobre o que se trata]
-                Links:
-                <a href="[URL confirmada]">[Nome do Portal]</a>
-
-                ### SE for informação/notícia não verificada:
-                Notícia:
-                [Resumo de até 200 caracteres sobre o que se trata]
-                Links:
-                ❌ Nenhum link confirmado encontrado nos portais consultados.
-
-                ### SE não for notícia ou informação verificável:
-                📌 [Resumo de até 200 caracteres sobre o que se trata o post]
-                ℹ️ NÃO É NOTÍCIA — Este conteúdo não tenta passar uma informação
-                verificável.
-
-                ---
+                Se não houver link confirmado, retorne link como string vazia:
+                {
+                  "texto": "resumo da análise",
+                  "link": ""
+                }
 
                 ## REGRAS OBRIGATÓRIAS:
-                1. NUNCA exiba etapas, títulos de etapas ou o processo de análise
+                1. NUNCA exiba etapas ou o processo de análise
                 2. NUNCA invente, suponha ou modifique links
-                3. NUNCA inclua um link sem ter confirmado que ele funciona
-                4. Resumo deve ter no máximo 200 caracteres
-                5. Seja direto e objetivo
+                3. Resumo deve ter no máximo 200 caracteres
+                4. Retorne APENAS o JSON, nada mais
               `,
             },
           ],
@@ -178,8 +143,15 @@ Se não houver nenhuma notícia detectável na página, informe que não foi pos
 
   const data = await response.json();
 
-  console.log(text);
   const parts = data.candidates[0].content.parts;
   const textPart = parts.find((part) => part.text);
-  return textPart.text;
+
+  // ✅ Parse do JSON retornado pela IA
+  try {
+    const resultado = JSON.parse(textPart.text);
+    return resultado; // { texto: "...", link: "..." }
+  } catch (e) {
+    // Se a IA não retornar JSON válido, retorna o texto cru
+    return { texto: textPart.text, link: "" };
+  }
 }
