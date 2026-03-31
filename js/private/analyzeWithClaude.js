@@ -105,6 +105,7 @@ Se não houver nenhuma notícia detectável na página, informe que não foi pos
 
                 ⚠️ PROIBIDO: Inventar, completar, supor ou modificar qualquer URL.
                 Se o link não puder ser 100% confirmado, NÃO o inclua na resposta.
+                mais sempre me retornar todos os links descobertos
 
                 ---
 

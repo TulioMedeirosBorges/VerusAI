@@ -8,6 +8,8 @@ export function Icons(name) {
     Aa: `<img src="/assets/icons/Aa.svg" class="icon-Aa">`,
     less: `<img src="/assets/icons/less.svg" class="icon-less">`,
     pluss: `<img src="/assets/icons/pluss.svg" class="icon-pluss">`,
+    darkmode: `<img src="/assets/icons/dark_mode.svg" class="icon-darkmode">`,
+    settings: `<img src="/assets/icons/settings.svg" class="icon-settings">`,
   };
 
   return icons[name];
