@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "analiser FakeNews",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlesSJXn3r7XGL2U9RszlqeVnNOQZbN+HpNJ/O8hDeX8/3by3N/ZAcJb6kojuEDhoL0w2mnsjnmXsoh9pMt6Pi1ybkTSxykECLAxFgNuCNtT7VRf3otE55GrgYmSzi8a/quxK30WzoDNfT/GsGq6AcEztL687asGxvp+/UAiX47ylly4lWRfozChAPs43HtsXBbyhngQ1vjn+VhBuNcqdbSQbqruxzmbjX4gE239cqq4Vhk0e9VFUi3jHP9phP4VpJFJpoQKlJcUEfUvvL9EwnRQNkcQ7WXuSQJmcANwMg5u0PavlzG4l+KYSk26HHQY+fjkbgFvVm82ysNB1GZcICQIDAQAB",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Analise de Noticias",
   "permissions": ["storage", "identity"],
   "oauth2": {

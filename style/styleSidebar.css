@@ -5,6 +5,10 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
+aside * {
+  font-size: var(--font-size, 14px);
+}
+
 aside {
   position: fixed;
   right: 20px;
@@ -227,4 +231,357 @@ aside {
     rgba(63, 181, 55, 1) 100%
   );
   margin-bottom: 10px;
+}
+
+#login_mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 998;
+  backdrop-filter: blur(2px);
+}
+
+#login_popup_interno {
+  position: absolute;
+  bottom: 120px;
+  left: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  z-index: 999; /* Aumentei de 999 para ficar acima da máscara */
+}
+
+.login_gap {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  flex-direction: column;
+}
+
+.login_popup_logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login_popup_logo img {
+  width: 28px;
+  height: 28px;
+}
+
+.login_popup_logo span {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.login_popup_logo small {
+  font-size: 10px;
+  color: #888;
+  display: block;
+}
+
+.login_popup_label {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.login_popup_input {
+  width: 100%;
+  border: solid 0.1px rgb(117, 117, 117);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f0f0f0;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+
+  color: black;
+}
+
+.login_popup_input:focus {
+  border: solid 0.1px black;
+}
+
+.login_popup_btn_confirmar {
+  width: 100%;
+  background: #000;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.login_popup_btn_google {
+  display: flex;
+  width: 100%;
+  background: white;
+  color: black;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+  cursor: pointer;
+
+  justify-content: center;
+  gap: 10px;
+}
+
+.login_popup_cadastro {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+}
+
+.login_popup_cadastro a {
+  color: #f1ae2b;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.icon_googlelo_login {
+  width: 15px;
+  height: 15px;
+}
+
+/* ✅ Menu de configurações */
+.menuConfig {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  border-radius: 20px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.menuConfig.escondido {
+  display: none;
+}
+
+.menuConfigHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menuConfigHeader h2 {
+  font-size: 15px;
+  color: black;
+  font-weight: 700;
+}
+
+.menuConfigHeader button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #888;
+}
+
+.menuConfigUsuario {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f8f8f8;
+  border-radius: 10px;
+}
+
+.menuConfigUsuario p {
+  font-size: 13px;
+  font-weight: 600;
+  color: black;
+}
+
+#menuLogout {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+#menuLogout p {
+  font-size: 12px;
+  color: #888;
+}
+
+.icon-logout-menu {
+  width: 14px;
+  height: 14px;
+  filter: invert(0.5);
+}
+
+.menuConfigSecao h3 {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.menuConfigItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.menuConfigItem p {
+  font-size: 13px;
+  color: black;
+}
+
+.alttexto {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#menuLess,
+#menuPlus {
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+}
+
+#menuBar {
+  --fill: 50%;
+  width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #000 var(--fill), #ccc var(--fill));
+}
+
+.retangleConfig {
+  background: #d9d9d9;
+  width: 40px;
+  height: 20px;
+  border-radius: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.retangleConfig.ativo-config {
+  background: #000;
+}
+
+.circleConfig {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.3s ease;
+}
+
+.retangleConfig.ativo-config .circleConfig {
+  transform: translateX(20px);
+}
+
+/* Classes de acessibilidade para o aside */
+aside.alto-contraste {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+}
+
+aside.alto-contraste .mensagemIA,
+aside.alto-contraste .mensagemIAPrimeira {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+aside.alto-contraste #chatInput {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+aside.tema-escuro {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+aside.tema-escuro .mensagemIA,
+aside.tema-escuro .mensagemIAPrimeira {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+aside.tema-escuro #chatInput {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+}
+/* Telas de recuperação de senha */
+.login_popup_tela {
+  display: none;
+}
+
+.login_popup_tela.ativa {
+  display: block;
+}
+
+.login_popup_voltar {
+  font-size: 11px;
+  color: #888;
+  cursor: pointer;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.login_popup_voltar:hover {
+  color: #000;
+}
+
+.login_popup_sucesso {
+  background: #d4edda;
+  color: #155724;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.login_popup_info {
+  background: #d1ecf1;
+  color: #0c5460;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  text-align: center;
+  line-height: 1.4;
 }
