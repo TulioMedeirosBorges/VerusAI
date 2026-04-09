@@ -4,7 +4,7 @@
   const SIDEBAR_ID = "sidebar_id";
   const OVERLAY_ID = "sidebar_overlay";
   const STYLE_GUARD = "secure_guard";
-  const logo = chrome.runtime.getURL("assets/image/LogoAosFatosAtivo 2.svg");
+  const logo = chrome.runtime.getURL("/assets/image/VerusIAAtivo 1.svg");
   const iconDarkmode = chrome.runtime.getURL("assets/icons/dark_mode.svg");
   const iconSettings = chrome.runtime.getURL("assets/icons/settings.svg");
   const iconGoogle = chrome.runtime.getURL("assets/icons/google.svg");
@@ -374,7 +374,7 @@
           });
         } catch (e) {
           console.warn(
-            "[AosFatos] Falha ao salvar configs no servidor:",
+            "[VerusAI] Falha ao salvar configs no servidor:",
             e.message,
           );
         }
@@ -443,7 +443,7 @@
               }
             } catch (e) {
               console.warn(
-                "[AosFatos] Usando configs locais (servidor indisponível)",
+                "[VerusAI] Usando configs locais (servidor indisponível)",
               );
             }
           }
@@ -489,7 +489,6 @@
 
           <div class="login_popup_logo">
             <img src="${logo}" alt="logo" />
-            <span>AosFatos<small>Verificador de Notícias</small></span>
           </div>
 
           <div class="login_gap">
@@ -520,11 +519,11 @@
         <!-- TELA 2: SOLICITAR RECUPERAÇÃO -->
         <div class="login_popup_tela" id="tela_solicitar">
           <p class="login_popup_voltar" id="voltar_login">← Voltar</p>
-          <div class="login_popup_logo">
-            <img src="${logo}" alt="logo" />
+          <div class="recuperar_popup_logo">
+            <img src="${logo}" alt="logo" />  
             <span>Recuperar Senha<small>Digite seu e-mail cadastrado</small></span>
           </div>
-          <div>
+          <div class="recuperar_popup_input">
             <p class="login_popup_label">E-mail</p>
             <input type="email" class="login_popup_input" id="popup_email_recuperar" placeholder="Digite seu e-mail" />
           </div>

@@ -265,26 +265,40 @@ aside {
   flex-direction: column;
 }
 
-.login_popup_logo {
+.recuperar_popup_logo {
+  justify-content: center;
   display: flex;
   align-items: center;
-  gap: 8px;
+  margin-bottom: 10px;
 }
 
-.login_popup_logo img {
-  width: 28px;
-  height: 28px;
+.recuperar_popup_logo img {
+  width: 190px;
+  height: 50px;
 }
 
-.login_popup_logo span {
+.recuperar_popup_logo span {
   font-weight: 700;
   font-size: 13px;
 }
 
-.login_popup_logo small {
+.recuperar_popup_logo small {
   font-size: 10px;
   color: #888;
   display: block;
+}
+.recuperar_popup_input {
+  margin-bottom: 10px;
+}
+
+.login_popup_logo {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+.login_popup_logo img {
+  width: 200px;
+  height: 50px;
 }
 
 .login_popup_label {
@@ -347,11 +361,23 @@ aside {
   color: #f1ae2b;
   cursor: pointer;
   font-weight: 600;
+  font-size: 0.8rem;
 }
 
 .icon_googlelo_login {
   width: 15px;
   height: 15px;
+}
+
+.login_popup_esqueceu {
+  display: flex;
+  justify-content: end;
+}
+
+#popup_esqueceu_senha {
+  font-size: small;
+  cursor: pointer;
+  color: #888;
 }
 
 /* ✅ Menu de configurações */

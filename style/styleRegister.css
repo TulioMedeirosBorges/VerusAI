@@ -13,14 +13,12 @@
 
 .headerRegister {
   display: flex;
-  gap: 30px;
-  justify-content: space-between;
-  justify-self: space;
   align-items: center;
+  justify-content: center;
 
   #logoRegister {
-    width: 90px;
-    height: 50px;
+    width: 200px;
+    height: 80px;
   }
   #closeIcon {
     width: 50px;

@@ -9,10 +9,6 @@ import { Icons } from "./icon.js";
 
 document.getElementById("checkIcon").innerHTML = Icons("check");
 
-document.getElementById("closeIcon").addEventListener("click", () => {
-  window.close();
-});
-
 const botao = document.getElementById("confirmRegister");
 
 function emailValido(email) {
