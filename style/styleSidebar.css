@@ -246,7 +246,7 @@ aside {
 
 #login_popup_interno {
   position: absolute;
-  bottom: 120px;
+  bottom: 66px;
   left: 20px;
   right: 20px;
   background: white;
@@ -299,6 +299,33 @@ aside {
 .login_popup_logo img {
   width: 200px;
   height: 50px;
+}
+
+.redefinir_popup_logo {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.redefinir_popup_logo img {
+  width: 200px;
+  height: 50px;
+}
+.redefinir_popup_logo span {
+  font-weight: 700;
+  font-size: 13px;
+}
+.redefinir_popup_logo small {
+  font-size: 10px;
+  color: #888;
+  display: block;
+}
+.redefinir_popup_input {
+  margin-bottom: 10px;
+}
+
+#popup_enviar_token p {
+  font-size: medium;
 }
 
 .login_popup_label {

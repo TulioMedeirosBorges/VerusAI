@@ -527,26 +527,26 @@
             <p class="login_popup_label">E-mail</p>
             <input type="email" class="login_popup_input" id="popup_email_recuperar" placeholder="Digite seu e-mail" />
           </div>
-          <button class="login_popup_btn_confirmar" id="popup_enviar_token">Enviar Código</button>
+          <button class="login_popup_btn_confirmar" id="popup_enviar_token"><p>Enviar Código</p></button>
         </div>
 
         <!-- TELA 3: REDEFINIR SENHA -->
         <div class="login_popup_tela" id="tela_redefinir">
           <p class="login_popup_voltar" id="voltar_solicitar">← Voltar</p>
-          <div class="login_popup_logo">
+          <div class="redefinir_popup_logo">
             <img src="${logo}" alt="logo" />
             <span>Nova Senha<small>Digite o código recebido no e-mail</small></span>
           </div>
           <div id="mensagem_sucesso_email" class="login_popup_info" style="display: none;"></div>
-          <div>
+          <div class= "redefinir_popup_input">
             <p class="login_popup_label">Código de Verificação</p>
             <input type="text" class="login_popup_input" id="popup_token" placeholder="Digite o código de 6 dígitos" maxlength="6" />
           </div>
-          <div>
+          <div class= "redefinir_popup_input">
             <p class="login_popup_label">Nova Senha</p>
             <input type="password" class="login_popup_input" id="popup_nova_senha" placeholder="Digite a nova senha" />
           </div>
-          <div>
+          <div class= "redefinir_popup_input">
             <p class="login_popup_label">Confirmar Senha</p>
             <input type="password" class="login_popup_input" id="popup_confirmar_senha" placeholder="Digite novamente" />
           </div>
@@ -698,8 +698,6 @@
         .addEventListener("click", () => {
           chrome.runtime.sendMessage({ action: "abrirCadastro" });
         });
-
-      // SOLICITAR RECUPERAÇÃO (ENVIAR TOKEN POR EMAIL)
       // SOLICITAR RECUPERAÇÃO (ENVIAR TOKEN POR EMAIL)
       shadow
         .getElementById("popup_enviar_token")
@@ -712,6 +710,10 @@
             alert("Digite seu e-mail.");
             return;
           }
+
+          const btn = shadow.getElementById("popup_enviar_token");
+          btn.disabled = true;
+          btn.querySelector("p").textContent = "Enviando...";
 
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(email)) {
@@ -755,9 +757,9 @@
             }
           } catch (e) {
             console.error("Erro recuperação:", e);
-            alert(
-              "Erro ao conectar com o servidor. Verifique se ele está rodando em http://localhost:3000",
-            );
+            alert("Erro ao conectar com o servidor.");
+            btn.disabled = false;
+            btn.querySelector("p").textContent = "Enviar Código";
           }
         });
 
