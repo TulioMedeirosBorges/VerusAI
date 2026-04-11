@@ -9,6 +9,7 @@
   const iconSettings = chrome.runtime.getURL("assets/icons/settings.svg");
   const iconGoogle = chrome.runtime.getURL("assets/icons/google.svg");
   const iconLogout = chrome.runtime.getURL("assets/icons/logout.svg");
+  const warningIcon = chrome.runtime.getURL("assets/icons/warning.svg");
 
   if (window[STYLE_GUARD]) return;
   window[STYLE_GUARD] = true;
@@ -532,31 +533,43 @@
 
         <!-- TELA 3: REDEFINIR SENHA -->
         <div class="login_popup_tela" id="tela_redefinir">
-          <p class="login_popup_voltar" id="voltar_solicitar">← Voltar</p>
-          <div class="redefinir_popup_logo">
-            <img src="${logo}" alt="logo" />
-            <span>Nova Senha<small>Digite o código recebido no e-mail</small></span>
-          </div>
-          <div id="mensagem_sucesso_email" class="login_popup_info" style="display: none;"></div>
-          <div class= "redefinir_popup_input">
-            <p class="login_popup_label">Código de Verificação</p>
-            <input type="text" class="login_popup_input" id="popup_token" placeholder="Digite o código de 6 dígitos" maxlength="6" />
-          </div>
-          <div class= "redefinir_popup_input">
-            <p class="login_popup_label">Nova Senha</p>
-            <input type="password" class="login_popup_input" id="popup_nova_senha" placeholder="Digite a nova senha" />
-          </div>
-          <div class= "redefinir_popup_input">
-            <p class="login_popup_label">Confirmar Senha</p>
-            <input type="password" class="login_popup_input" id="popup_confirmar_senha" placeholder="Digite novamente" />
-          </div>
-          <button class="login_popup_btn_confirmar" id="popup_redefinir_senha">Redefinir Senha</button>
+        <p class="login_popup_voltar" id="voltar_solicitar">← Voltar</p>
+        <div class="redefinir_popup_logo">
+          <img src="${logo}" alt="logo" />
+          <span>Nova Senha<small>Digite o código recebido no e-mail</small></span>
         </div>
+        <div id="mensagem_sucesso_email" class="login_popup_info" style="display: none;"></div>
+        <div class="redefinir_popup_input">
+          <p class="login_popup_label">Código de Verificação</p>
+          <input type="text" class="login_popup_input" id="popup_token" placeholder="Digite o código de 6 dígitos" maxlength="6" />
+          <span class="erro" id="erroToken"></span>
+        </div>
+        <div class="redefinir_popup_input">
+          <p class="login_popup_label">Nova Senha</p>
+          <input type="password" class="login_popup_input" id="popup_nova_senha" placeholder="Digite a nova senha" />
+          <span class="erro" id="erroNovaSenha"></span>
+        </div>
+        <div class="redefinir_popup_input">
+          <p class="login_popup_label">Confirmar Senha</p>
+          <input type="password" class="login_popup_input" id="popup_confirmar_senha" placeholder="Digite novamente" />
+          <span class="erro" id="erroConfirmarSenha"></span>
+        </div>
+        <button class="login_popup_btn_confirmar" id="popup_redefinir_senha"><p>Redefinir Senha</p></button>
+      </div>
+      <!-- TELA 4: SUCESSO -->
+      <div class="login_popup_tela" id="tela_sucesso_redefinicao">
+        <div class="sucesso_redefinicao">
+          <div class="sucesso_icone">✅</div>
+          <h2>Senha redefinida!</h2>
+          <p>Sua senha foi alterada com sucesso.</p>
+          <button class="login_popup_btn_confirmar" id="btn_voltar_login_sucesso"><p>Fazer login</p></button>
+        </div>
+      </div>  
       `;
 
       shadow.querySelector("aside").appendChild(popup);
+      popup.classList.add("tela-login-ativa");
 
-      // Inputs para prevenir propagação de eventos
       setTimeout(() => {
         const inputs = [
           "popup_email_login",
@@ -577,14 +590,52 @@
             console.warn(`Input não encontrado: ${id}`);
           }
         });
+
+        // ✅ ADICIONE O BOTÃO DE VOLTAR AQUI DENTRO DO SETTIMEOUT
+        const btnVoltarSucesso = shadow.getElementById(
+          "btn_voltar_login_sucesso",
+        );
+        if (btnVoltarSucesso) {
+          btnVoltarSucesso.addEventListener("click", () => {
+            mudarTela("tela_login");
+            // Limpa os campos de login também
+            shadow.getElementById("popup_email_login").value = "";
+            shadow.getElementById("popup_senha_login").value = "";
+          });
+        } else {
+          console.warn("Botão voltar sucesso não encontrado");
+        }
       }, 0);
 
       // Função para mudar de tela
       function mudarTela(telaId) {
+        // Remove classe ativa de todas as telas
         shadow
           .querySelectorAll(".login_popup_tela")
           .forEach((t) => t.classList.remove("ativa"));
+
+        // Adiciona classe ativa na tela selecionada
         shadow.getElementById(telaId).classList.add("ativa");
+
+        // Remove todas as classes de posição do popup
+        popup.classList.remove(
+          "tela-login-ativa",
+          "tela-solicitar-ativa",
+          "tela-redefinir-ativa",
+          "tela-sucesso-redefinicao-ativa", // ✅ Adicionado
+        );
+
+        // Adiciona a classe correspondente à tela ativa
+        if (telaId === "tela_login") {
+          popup.classList.add("tela-login-ativa");
+        } else if (telaId === "tela_solicitar") {
+          popup.classList.add("tela-solicitar-ativa");
+        } else if (telaId === "tela_redefinir") {
+          popup.classList.add("tela-redefinir-ativa");
+        } else if (telaId === "tela_sucesso_redefinicao") {
+          // ✅ Adicionado
+          popup.classList.add("tela-sucesso-redefinicao-ativa");
+        }
       }
 
       // Função para remover popup e máscara
@@ -801,10 +852,9 @@
             const dados = await resposta.json();
 
             if (resposta.ok) {
-              alert(
-                "✅ Senha redefinida com sucesso! Faça login com sua nova senha.",
-              );
-              mudarTela("tela_login");
+              // ✅ MUDANÇA: Em vez de alert + mudarTela para login, vai para tela de sucesso
+              mudarTela("tela_sucesso_redefinicao");
+
               // Limpa os campos
               shadow.getElementById("popup_token").value = "";
               shadow.getElementById("popup_nova_senha").value = "";

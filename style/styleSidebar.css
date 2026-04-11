@@ -246,16 +246,83 @@ aside {
 
 #login_popup_interno {
   position: absolute;
-  bottom: 66px;
-  left: 20px;
-  right: 20px;
+  left: 12px;
+  right: 12px;
   background: white;
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  z-index: 999; /* Aumentei de 999 para ficar acima da máscara */
+  gap: 12px;
+  z-index: 999;
+  transition: bottom 0.3s ease;
+}
+
+/* Posições para cada tela */
+#login_popup_interno.tela-login-ativa {
+  bottom: 99px;
+}
+
+#login_popup_interno.tela-solicitar-ativa {
+  bottom: 150px;
+}
+
+#login_popup_interno.tela-redefinir-ativa {
+  bottom: 16px;
+}
+
+/* Telas */
+.login_popup_tela {
+  display: none;
+}
+
+.login_popup_tela.ativa {
+  display: block;
+}
+
+/* Posição da tela de SUCESSO */
+#login_popup_interno.tela-sucesso-redefinicao-ativa {
+  bottom: 120px; /* ajuste conforme necessário */
+}
+
+/* Estilização da tela de sucesso */
+.sucesso_redefinicao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.sucesso_icone {
+  font-size: 64px;
+  animation: sucessoPulse 0.6s ease;
+}
+
+@keyframes sucessoPulse {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.sucesso_redefinicao h2 {
+  font-size: 20px;
+  color: #155724;
+  margin: 0;
+}
+
+.sucesso_redefinicao p {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
 }
 
 .login_gap {
@@ -322,6 +389,23 @@ aside {
 }
 .redefinir_popup_input {
   margin-bottom: 10px;
+}
+.erro {
+  color: red;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.erro .icon-warning {
+  width: 12px;
+  height: 12px;
+}
+
+input.input-erro {
+  border: 1px solid red !important;
 }
 
 #popup_enviar_token p {
