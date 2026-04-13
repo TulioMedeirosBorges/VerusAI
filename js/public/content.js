@@ -14,6 +14,28 @@
   if (window[STYLE_GUARD]) return;
   window[STYLE_GUARD] = true;
 
+  // Helper: faz fetch via background worker (evita bloqueio de CORS para localhost)
+  function fetchServidor(path, body) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: "FETCH",
+          url: `http://localhost:3000${path}`,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        },
+        (response) => {
+          if (chrome.runtime.lastError)
+            return reject(new Error(chrome.runtime.lastError.message));
+          if (!response || response.error)
+            return reject(new Error(response?.error || "Sem resposta"));
+          resolve(response);
+        },
+      );
+    });
+  }
+
   let sidebarAberto = false;
 
   const buttonStyle = document.createElement("style");
@@ -275,8 +297,10 @@
     const menuPlus = shadow.getElementById("menuPlus");
 
     // Carrega nome do usuário
-    chrome.storage.local.get("email", (resultado) => {
-      if (resultado.email) {
+    chrome.storage.local.get(["email", "nome"], (resultado) => {
+      if (resultado.nome) {
+        menuNomeUsuario.textContent = resultado.nome;
+      } else if (resultado.email) {
         menuNomeUsuario.textContent = resultado.email.split("@")[0];
       }
     });
@@ -368,10 +392,9 @@
       chrome.storage.local.get("email", async (resultado) => {
         if (!resultado.email) return;
         try {
-          await fetch("http://localhost:3000/salvar-configs", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: resultado.email, configs }),
+          await fetchServidor("/salvar-configs", {
+            email: resultado.email,
+            configs,
           });
         } catch (e) {
           console.warn(
@@ -426,17 +449,11 @@
 
           if (resultado.email) {
             try {
-              const resposta = await fetch(
-                "http://localhost:3000/carregar-configs",
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ email: resultado.email }),
-                },
-              );
-
+              const resposta = await fetchServidor("/carregar-configs", {
+                email: resultado.email,
+              });
               if (resposta.ok) {
-                const dados = await resposta.json();
+                const dados = resposta.data;
                 if (dados.configs && Object.keys(dados.configs).length > 0) {
                   configs = dados.configs;
                   chrome.storage.local.set({ configs });
@@ -556,6 +573,50 @@
         </div>
         <button class="login_popup_btn_confirmar" id="popup_redefinir_senha"><p>Redefinir Senha</p></button>
       </div>
+      <!-- TELA 5: REGISTRO/CADASTRO -->
+      <div class="login_popup_tela" id="tela_registro">
+        <p class="login_popup_voltar" id="voltar_registro">← Voltar</p>
+        <div class="registro_popup_logo">
+          <img src="${logo}" alt="logo" />
+          <span>Criar Conta<small>Preencha os dados para se cadastrar</small></span>
+        </div>
+        <div class="registro_popup_input">
+          <p class="login_popup_label">Nome (opcional)</p>
+          <input type="text" class="login_popup_input" id="popup_nome_registro" placeholder="Digite seu nome" />
+        </div>
+        <div class="registro_popup_input">
+          <p class="login_popup_label">E-mail</p>
+          <input type="email" class="login_popup_input" id="popup_email_registro" placeholder="Digite seu e-mail" />
+          <span class="erro" id="erroEmailRegistro"></span>
+        </div>
+        <div class="registro_popup_input">
+          <p class="login_popup_label">Senha</p>
+          <input type="password" class="login_popup_input" id="popup_senha_registro" placeholder="Mínimo 6 caracteres" />
+          <div class="senha-forca" id="senha_forca_registro">
+            <div class="senha-forca-barra"></div>
+            <div class="senha-forca-barra"></div>
+            <div class="senha-forca-barra"></div>
+          </div>
+          <p class="senha-forca-texto" id="senha_forca_texto"></p>
+          <span class="erro" id="erroSenhaRegistro"></span>
+        </div>
+        <div class="registro_popup_input">
+          <p class="login_popup_label">Confirmar Senha</p>
+          <input type="password" class="login_popup_input" id="popup_confirmar_senha_registro" placeholder="Digite a senha novamente" />
+          <span class="erro" id="erroConfirmarSenhaRegistro"></span>
+        </div>
+        <button class="login_popup_btn_confirmar" id="popup_confirmar_registro"><p>Criar Conta</p></button>
+        <p class="login_popup_cadastro">Already have an account? <a id="popup_ja_tem_conta">Sign in</a></p>
+      </div>
+      <!-- TELA 6: SUCESSO CADASTRO -->
+      <div class="login_popup_tela" id="tela_sucesso_cadastro">
+        <div class="sucesso_redefinicao">
+          <div class="sucesso_icone">🎉</div>
+          <h2>Bem-vindo!</h2>
+          <p>Sua conta foi criada com sucesso.</p>
+          <button class="login_popup_btn_confirmar" id="btn_comecar_cadastro"><p>Começar a usar</p></button>
+        </div>
+      </div>
       <!-- TELA 4: SUCESSO -->
       <div class="login_popup_tela" id="tela_sucesso_redefinicao">
         <div class="sucesso_redefinicao">
@@ -578,6 +639,10 @@
           "popup_token",
           "popup_nova_senha",
           "popup_confirmar_senha",
+          "popup_nome_registro", // ✅ Novo
+          "popup_email_registro", // ✅ Novo
+          "popup_senha_registro", // ✅ Novo
+          "popup_confirmar_senha_registro", // ✅ Novo
         ];
 
         inputs.forEach((id) => {
@@ -591,41 +656,113 @@
           }
         });
 
-        // ✅ ADICIONE O BOTÃO DE VOLTAR AQUI DENTRO DO SETTIMEOUT
+        // Botão de voltar da tela de sucesso
         const btnVoltarSucesso = shadow.getElementById(
           "btn_voltar_login_sucesso",
         );
         if (btnVoltarSucesso) {
           btnVoltarSucesso.addEventListener("click", () => {
             mudarTela("tela_login");
-            // Limpa os campos de login também
             shadow.getElementById("popup_email_login").value = "";
             shadow.getElementById("popup_senha_login").value = "";
           });
-        } else {
-          console.warn("Botão voltar sucesso não encontrado");
+        }
+
+        // ✅ NOVO: Botão da tela de sucesso CADASTRO
+        const btnComecarCadastro = shadow.getElementById(
+          "btn_comecar_cadastro",
+        );
+        if (btnComecarCadastro) {
+          btnComecarCadastro.addEventListener("click", () => {
+            fecharPopupEMascara(); // Fecha o popup e começa a usar
+          });
+        }
+
+        // ✅ INDICADOR DE FORÇA DA SENHA NO REGISTRO
+        const senhaRegistroInput = shadow.getElementById(
+          "popup_senha_registro",
+        );
+        if (senhaRegistroInput) {
+          senhaRegistroInput.addEventListener("input", () => {
+            const senha = senhaRegistroInput.value;
+            const barras = shadow.querySelectorAll(
+              "#senha_forca_registro .senha-forca-barra",
+            );
+            const textoForca = shadow.getElementById("senha_forca_texto");
+
+            // Remove classes anteriores
+            barras.forEach((b) => {
+              b.classList.remove("ativa-fraca", "ativa-media", "ativa-forte");
+            });
+
+            if (senha.length === 0) {
+              textoForca.textContent = "";
+              return;
+            }
+
+            // Calcula força da senha COM VALIDAÇÕES EXPLÍCITAS
+            let forca = 0;
+
+            // Critério 1: Tamanho mínimo (6 caracteres)
+            if (senha.length >= 6) forca++;
+
+            // Critério 2: Tamanho bom (10+ caracteres)
+            if (senha.length >= 10) forca++;
+
+            // Critério 3: Tem letras maiúsculas E minúsculas
+            const temMinuscula = /[a-z]/.test(senha);
+            const temMaiuscula = /[A-Z]/.test(senha);
+            if (temMinuscula && temMaiuscula) forca++;
+
+            // Critério 4: Tem números
+            if (/\d/.test(senha)) forca++;
+
+            // Critério 5: Tem caracteres especiais (!@#$%^&*()_+-=[]{}|;:,.<>?)
+            if (/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(senha)) forca++;
+
+            // Atualiza visual baseado na força (0-5 pontos)
+            if (forca <= 2) {
+              // Senha fraca (0-2 pontos)
+              barras[0].classList.add("ativa-fraca");
+              textoForca.textContent = "Fraca";
+              textoForca.style.color = "#dc3545";
+            } else if (forca <= 3) {
+              // Senha média (3 pontos)
+              barras[0].classList.add("ativa-media");
+              barras[1].classList.add("ativa-media");
+              textoForca.textContent = "Média";
+              textoForca.style.color = "#ffc107";
+            } else {
+              // Senha forte (4-5 pontos)
+              barras[0].classList.add("ativa-forte");
+              barras[1].classList.add("ativa-forte");
+              barras[2].classList.add("ativa-forte");
+              textoForca.textContent = "Forte";
+              textoForca.style.color = "#28a745";
+            }
+
+            // DEBUG: Descomentar para testar
+            // console.log('Senha:', senha, 'Força:', forca, 'Tem especial:', /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(senha));
+          });
         }
       }, 0);
 
-      // Função para mudar de tela
       function mudarTela(telaId) {
-        // Remove classe ativa de todas as telas
         shadow
           .querySelectorAll(".login_popup_tela")
           .forEach((t) => t.classList.remove("ativa"));
 
-        // Adiciona classe ativa na tela selecionada
         shadow.getElementById(telaId).classList.add("ativa");
 
-        // Remove todas as classes de posição do popup
         popup.classList.remove(
           "tela-login-ativa",
           "tela-solicitar-ativa",
           "tela-redefinir-ativa",
-          "tela-sucesso-redefinicao-ativa", // ✅ Adicionado
+          "tela-sucesso-redefinicao-ativa",
+          "tela-registro-ativa",
+          "tela-sucesso-cadastro-ativa", // ✅ Adicionado
         );
 
-        // Adiciona a classe correspondente à tela ativa
         if (telaId === "tela_login") {
           popup.classList.add("tela-login-ativa");
         } else if (telaId === "tela_solicitar") {
@@ -633,8 +770,12 @@
         } else if (telaId === "tela_redefinir") {
           popup.classList.add("tela-redefinir-ativa");
         } else if (telaId === "tela_sucesso_redefinicao") {
-          // ✅ Adicionado
           popup.classList.add("tela-sucesso-redefinicao-ativa");
+        } else if (telaId === "tela_registro") {
+          popup.classList.add("tela-registro-ativa");
+        } else if (telaId === "tela_sucesso_cadastro") {
+          // ✅ Adicionado
+          popup.classList.add("tela-sucesso-cadastro-ativa");
         }
       }
 
@@ -672,28 +813,28 @@
             return;
           }
 
-          try {
-            const resposta = await fetch("http://localhost:3000/login", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, senha }),
-            });
-            const dados = await resposta.json();
+          async function tentarLogin() {
+            try {
+              const resposta = await fetchServidor("/login", { email, senha });
+              const dados = resposta.data;
 
-            if (resposta.ok) {
-              chrome.storage.local.set(
-                { logado: true, email: dados.email },
-                () => {
-                  fecharPopupEMascara();
-                  menuNomeUsuario.textContent = dados.email.split("@")[0];
-                },
-              );
-            } else {
-              alert(dados.erro);
+              if (resposta.ok) {
+                chrome.storage.local.set(
+                  { logado: true, email: dados.email },
+                  () => {
+                    fecharPopupEMascara();
+                    menuNomeUsuario.textContent = dados.email.split("@")[0];
+                  },
+                );
+              } else {
+                alert(dados.erro);
+              }
+            } catch (e) {
+              alert("Erro ao conectar com o servidor.");
             }
-          } catch (e) {
-            alert("Erro ao conectar com o servidor.");
           }
+
+          tentarLogin();
         });
 
       // LOGIN COM GOOGLE
@@ -744,10 +885,157 @@
         });
 
       // CADASTRO
+      // ✅ NAVEGAÇÃO: Login → Registro
       shadow
         .getElementById("popup_cadastro_login")
         .addEventListener("click", () => {
-          chrome.runtime.sendMessage({ action: "abrirCadastro" });
+          mudarTela("tela_registro"); // Vai para tela de registro
+        });
+
+      // ✅ NAVEGAÇÃO: Registro → Login (botão "voltar")
+      shadow.getElementById("voltar_registro").addEventListener("click", () => {
+        mudarTela("tela_login");
+        // Limpa os campos de registro
+        shadow.getElementById("popup_nome_registro").value = "";
+        shadow.getElementById("popup_email_registro").value = "";
+        shadow.getElementById("popup_senha_registro").value = "";
+        shadow.getElementById("popup_confirmar_senha_registro").value = "";
+        shadow.getElementById("erroEmailRegistro").textContent = "";
+        shadow.getElementById("erroSenhaRegistro").textContent = "";
+        shadow.getElementById("erroConfirmarSenhaRegistro").textContent = "";
+      });
+
+      // ✅ NAVEGAÇÃO: Registro → Login (link "já tem conta")
+      shadow
+        .getElementById("popup_ja_tem_conta")
+        .addEventListener("click", () => {
+          mudarTela("tela_login");
+        });
+
+      // ✅ REGISTRO/CADASTRO (botão "Criar Conta")
+      shadow
+        .getElementById("popup_confirmar_registro")
+        .addEventListener("click", async () => {
+          // Limpa mensagens de erro
+          shadow.getElementById("erroEmailRegistro").textContent = "";
+          shadow.getElementById("erroSenhaRegistro").textContent = "";
+          shadow.getElementById("erroConfirmarSenhaRegistro").textContent = "";
+
+          const nome = shadow
+            .getElementById("popup_nome_registro")
+            .value.trim();
+          const email = shadow
+            .getElementById("popup_email_registro")
+            .value.trim();
+          const senha = shadow.getElementById("popup_senha_registro").value;
+          const confirmarSenha = shadow.getElementById(
+            "popup_confirmar_senha_registro",
+          ).value;
+
+          let temErro = false;
+
+          // Validação de email
+          if (!email) {
+            shadow.getElementById("erroEmailRegistro").textContent =
+              "E-mail é obrigatório";
+            temErro = true;
+          } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+              shadow.getElementById("erroEmailRegistro").textContent =
+                "E-mail inválido";
+              temErro = true;
+            }
+          }
+
+          // ✅ VALIDAÇÃO DE SENHA COMPLETA COM CARACTERES ESPECIAIS OBRIGATÓRIOS
+          if (!senha) {
+            shadow.getElementById("erroSenhaRegistro").textContent =
+              "Senha é obrigatória";
+            temErro = true;
+          } else {
+            // Validação 1: Tamanho mínimo
+            if (senha.length < 6) {
+              shadow.getElementById("erroSenhaRegistro").textContent =
+                "Senha deve ter no mínimo 6 caracteres";
+              temErro = true;
+            }
+            // Validação 2: Deve conter pelo menos uma letra maiúscula
+            else if (!/[A-Z]/.test(senha)) {
+              shadow.getElementById("erroSenhaRegistro").textContent =
+                "Senha deve conter pelo menos uma letra maiúscula";
+              temErro = true;
+            }
+            // Validação 3: Deve conter pelo menos uma letra minúscula
+            else if (!/[a-z]/.test(senha)) {
+              shadow.getElementById("erroSenhaRegistro").textContent =
+                "Senha deve conter pelo menos uma letra minúscula";
+              temErro = true;
+            }
+            // Validação 4: Deve conter pelo menos um número
+            else if (!/\d/.test(senha)) {
+              shadow.getElementById("erroSenhaRegistro").textContent =
+                "Senha deve conter pelo menos um número";
+              temErro = true;
+            }
+            // ✅ Validação 5: OBRIGATÓRIO - Deve conter pelo menos um caractere especial
+            else if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(senha)) {
+              shadow.getElementById("erroSenhaRegistro").textContent =
+                "Senha deve conter pelo menos um caractere especial (!@#$%^&*...)";
+              temErro = true;
+            }
+          }
+
+          // Validação de confirmação
+          if (!confirmarSenha) {
+            shadow.getElementById("erroConfirmarSenhaRegistro").textContent =
+              "Confirme a senha";
+            temErro = true;
+          } else if (senha !== confirmarSenha) {
+            shadow.getElementById("erroConfirmarSenhaRegistro").textContent =
+              "As senhas não coincidem";
+            temErro = true;
+          }
+
+          if (temErro) return;
+
+          const btn = shadow.getElementById("popup_confirmar_registro");
+
+          async function tentarRegistro() {
+            btn.disabled = true;
+            btn.querySelector("p").textContent = "Criando conta...";
+
+            try {
+              const resposta = await fetchServidor("/register", {
+                email,
+                senha,
+                nome,
+              });
+              const dados = resposta.data;
+
+              if (resposta.ok) {
+                chrome.storage.local.set({ logado: true, email, nome }, () => {
+                  menuNomeUsuario.textContent = nome || email.split("@")[0];
+                  mudarTela("tela_sucesso_cadastro");
+                });
+              } else {
+                if (dados.campo === "email") {
+                  shadow.getElementById("erroEmailRegistro").textContent =
+                    dados.erro;
+                } else {
+                  alert(dados.erro);
+                }
+              }
+            } catch (e) {
+              console.error("Erro registro:", e);
+              alert("Erro ao conectar com o servidor.");
+            } finally {
+              btn.disabled = false;
+              btn.querySelector("p").textContent = "Criar Conta";
+            }
+          }
+
+          tentarRegistro();
         });
       // SOLICITAR RECUPERAÇÃO (ENVIAR TOKEN POR EMAIL)
       shadow
@@ -762,56 +1050,43 @@
             return;
           }
 
-          const btn = shadow.getElementById("popup_enviar_token");
-          btn.disabled = true;
-          btn.querySelector("p").textContent = "Enviando...";
-
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(email)) {
             alert("Digite um e-mail válido.");
             return;
           }
 
-          try {
-            const resposta = await fetch(
-              "http://localhost:3000/recuperar-senha",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-              },
-            );
+          const btn = shadow.getElementById("popup_enviar_token");
 
-            // ✅ Verifica se a resposta é JSON
-            const contentType = resposta.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-              console.error(
-                "Servidor retornou HTML ao invés de JSON. Verifique se o servidor está rodando corretamente.",
-              );
-              alert(
-                "Erro de comunicação com o servidor. Verifique se o servidor está rodando.",
-              );
-              return;
+          async function tentarEnviarToken() {
+            btn.disabled = true;
+            btn.querySelector("p").textContent = "Enviando...";
+
+            try {
+              const resposta = await fetchServidor("/recuperar-senha", {
+                email,
+              });
+              const dados = resposta.data;
+
+              if (resposta.ok) {
+                const msgEl = shadow.getElementById("mensagem_sucesso_email");
+                msgEl.textContent = `📧 Enviamos um código de 6 dígitos para ${email}. Verifique sua caixa de entrada e spam.`;
+                msgEl.style.display = "block";
+                mudarTela("tela_redefinir");
+                shadow.getElementById("popup_token").dataset.email = email;
+              } else {
+                alert(dados.erro || "Erro ao solicitar recuperação.");
+              }
+            } catch (e) {
+              console.error("Erro recuperação:", e);
+              alert("Erro ao conectar com o servidor.");
+            } finally {
+              btn.disabled = false;
+              btn.querySelector("p").textContent = "Enviar Código";
             }
-
-            const dados = await resposta.json();
-
-            if (resposta.ok) {
-              const msgEl = shadow.getElementById("mensagem_sucesso_email");
-              msgEl.textContent = `📧 Enviamos um código de 6 dígitos para ${email}. Verifique sua caixa de entrada e spam.`;
-              msgEl.style.display = "block";
-
-              mudarTela("tela_redefinir");
-              shadow.getElementById("popup_token").dataset.email = email;
-            } else {
-              alert(dados.erro || "Erro ao solicitar recuperação.");
-            }
-          } catch (e) {
-            console.error("Erro recuperação:", e);
-            alert("Erro ao conectar com o servidor.");
-            btn.disabled = false;
-            btn.querySelector("p").textContent = "Enviar Código";
           }
+
+          tentarEnviarToken();
         });
 
       // REDEFINIR SENHA COM TOKEN
@@ -839,35 +1114,31 @@
             return;
           }
 
-          try {
-            const resposta = await fetch(
-              "http://localhost:3000/redefinir-senha",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token, novaSenha }),
-              },
-            );
+          async function tentarRedefinir() {
+            try {
+              const resposta = await fetchServidor("/redefinir-senha", {
+                token,
+                novaSenha,
+              });
+              const dados = resposta.data;
 
-            const dados = await resposta.json();
-
-            if (resposta.ok) {
-              // ✅ MUDANÇA: Em vez de alert + mudarTela para login, vai para tela de sucesso
-              mudarTela("tela_sucesso_redefinicao");
-
-              // Limpa os campos
-              shadow.getElementById("popup_token").value = "";
-              shadow.getElementById("popup_nova_senha").value = "";
-              shadow.getElementById("popup_confirmar_senha").value = "";
-              shadow.getElementById("mensagem_sucesso_email").style.display =
-                "none";
-            } else {
-              alert(dados.erro || "Erro ao redefinir senha.");
+              if (resposta.ok) {
+                mudarTela("tela_sucesso_redefinicao");
+                shadow.getElementById("popup_token").value = "";
+                shadow.getElementById("popup_nova_senha").value = "";
+                shadow.getElementById("popup_confirmar_senha").value = "";
+                shadow.getElementById("mensagem_sucesso_email").style.display =
+                  "none";
+              } else {
+                alert(dados.erro || "Erro ao redefinir senha.");
+              }
+            } catch (e) {
+              console.error("Erro redefinir:", e);
+              alert("Erro ao conectar com o servidor.");
             }
-          } catch (e) {
-            alert("Erro ao conectar com o servidor.");
-            console.error("Erro redefinir:", e);
           }
+
+          tentarRedefinir();
         });
     }
 

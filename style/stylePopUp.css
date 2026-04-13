@@ -168,3 +168,32 @@ input.input-erro {
 .esqueci_senha a:hover {
   color: #f1ae2b;
 }
+
+.senha-forca {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.senha-forca-barra {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #ddd;
+  transition: background 0.3s ease;
+}
+
+.senha-forca-barra.ativa-fraca {
+  background: #dc3545;
+}
+.senha-forca-barra.ativa-media {
+  background: #ffc107;
+}
+.senha-forca-barra.ativa-forte {
+  background: #28a745;
+}
+
+.senha-forca-texto {
+  font-size: 11px;
+  margin-top: 3px;
+}

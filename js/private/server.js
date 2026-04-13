@@ -46,9 +46,12 @@ db.exec(`
 try {
   db.exec("ALTER TABLE usuarios ADD COLUMN configs TEXT DEFAULT '{}'");
 } catch (e) {}
+try {
+  db.exec("ALTER TABLE usuarios ADD COLUMN nome TEXT DEFAULT ''");
+} catch (e) {}
 
 app.post("/register", async (req, res) => {
-  const { email, senha } = req.body;
+  const { email, senha, nome } = req.body;
 
   if (!email || !senha) {
     return res.status(400).json({ erro: "E-mail e senha são obrigatórios." });
@@ -56,10 +59,9 @@ app.post("/register", async (req, res) => {
 
   try {
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    const inserir = db.prepare(
-      "INSERT INTO usuarios (email, senha) VALUES (?, ?)",
-    );
-    inserir.run(email, senhaCriptografada);
+    db.prepare(
+      "INSERT INTO usuarios (email, senha, nome) VALUES (?, ?, ?)",
+    ).run(email, senhaCriptografada, nome || "");
     res.status(201).json({ mensagem: "Usuário cadastrado com sucesso!" });
   } catch (err) {
     if (err.message.includes("UNIQUE")) {
@@ -94,9 +96,11 @@ app.post("/login", async (req, res) => {
     return res.status(401).json({ erro: "Senha incorreta.", campo: "senha" });
   }
 
-  res
-    .status(200)
-    .json({ mensagem: "Login realizado com sucesso!", email: usuario.email });
+  res.status(200).json({
+    mensagem: "Login realizado com sucesso!",
+    email: usuario.email,
+    nome: usuario.nome || usuario.email.split("@")[0],
+  });
 });
 
 app.post("/login-google", async (req, res) => {
@@ -115,7 +119,13 @@ app.post("/login-google", async (req, res) => {
     );
   }
 
-  res.status(200).json({ mensagem: "Login com Google realizado!", email });
+  res
+    .status(200)
+    .json({
+      mensagem: "Login com Google realizado!",
+      email,
+      nome: nome || email.split("@")[0],
+    });
 });
 
 app.post("/salvar-configs", (req, res) => {

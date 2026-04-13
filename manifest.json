@@ -1,15 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "analiser FakeNews",
+  "name": "VerusAI",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlesSJXn3r7XGL2U9RszlqeVnNOQZbN+HpNJ/O8hDeX8/3by3N/ZAcJb6kojuEDhoL0w2mnsjnmXsoh9pMt6Pi1ybkTSxykECLAxFgNuCNtT7VRf3otE55GrgYmSzi8a/quxK30WzoDNfT/GsGq6AcEztL687asGxvp+/UAiX47ylly4lWRfozChAPs43HtsXBbyhngQ1vjn+VhBuNcqdbSQbqruxzmbjX4gE239cqq4Vhk0e9VFUi3jHP9phP4VpJFJpoQKlJcUEfUvvL9EwnRQNkcQ7WXuSQJmcANwMg5u0PavlzG4l+KYSk26HHQY+fjkbgFvVm82ysNB1GZcICQIDAQAB",
-  "version": "3.0.0",
+  "version": "3.5.0",
   "description": "Analise de Noticias",
-  "permissions": ["storage", "identity"],
+  "permissions": ["storage", "identity", "activeTab"],
   "oauth2": {
     "client_id": "166919224714-251qg7q1abh1h3nenmvekh5agr5ojldv.apps.googleusercontent.com",
     "scopes": ["openid", "email", "profile"]
   },
-  "host_permissions": ["<all_urls>", "http://localhost:3000/*"],
+  "host_permissions": [
+    "<all_urls>",
+    "http://localhost:3000/*",
+    "https://www.googleapis.com/*"
+  ],
   "web_accessible_resources": [
     {
       "resources": [
@@ -37,6 +41,9 @@
       "run_at": "document_idle"
     }
   ],
+  "background": {
+    "service_worker": "js/public/background.js"
+  },
   "action": {
     "default_title": "Analiser FakeNews",
     "default_popup": "pages/popup.html"
