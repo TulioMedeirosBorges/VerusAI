@@ -70,8 +70,8 @@
       font-size: 14px;
       cursor: pointer;
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+      transition: right 0.3s ease, opacity 0.3s ease;
     }
-
     #sidebar_overlay {
       position: fixed;
       top: 0;
@@ -1205,17 +1205,32 @@
   function CreateButton() {
     if (document.getElementById(BTN_ID)) return;
 
+    // ✅ CRIA OS DOIS BOTÕES PRIMEIRO
     const button = document.createElement("button");
     button.id = BTN_ID;
     button.type = "button";
     button.textContent = "Analisar";
     button.setAttribute("aria-label", "Abrir painel de Analise");
 
+    const buttonChat = document.createElement("button");
+    buttonChat.id = BTN_CHAT_ID;
+    buttonChat.type = "button";
+    buttonChat.textContent = "💬";
+    buttonChat.setAttribute("aria-label", "Abrir chat");
+
+    // ✅ ADICIONA OS DOIS BOTÕES AO DOM
+    document.body.appendChild(button);
+    document.body.appendChild(buttonChat);
+
+    // ✅ AGORA ADICIONA OS EVENT LISTENERS (depois que ambos existem)
     button.addEventListener("click", async () => {
       const sidebar = document.getElementById(SIDEBAR_ID);
       if (sidebar) {
         fecharSidebar();
         button.textContent = "Analisar";
+        buttonChat.style.opacity = "1";
+        buttonChat.style.pointerEvents = "auto";
+        buttonChat.style.right = "110px"; // ✅ VOLTA POSIÇÃO ORIGINAL
         return;
       }
 
@@ -1233,6 +1248,7 @@
       const img = article.querySelector("img");
 
       button.textContent = "Analisando...";
+      buttonChat.style.right = "140px"; // ✅ EMPURRA O CHAT PRO LADO
       button.disabled = true;
 
       let analysis = { texto: "", link: "" };
@@ -1251,27 +1267,30 @@
 
       criarSidebar(analysis);
       button.textContent = "Fechar";
+      buttonChat.style.right = "100px"; // VOLTA O CHAT PRO LADO
       button.disabled = false;
     });
-
-    const buttonChat = document.createElement("button");
-    buttonChat.id = BTN_CHAT_ID;
-    buttonChat.type = "button";
-    buttonChat.textContent = "💬";
-    buttonChat.setAttribute("aria-label", "Abrir chat");
 
     buttonChat.addEventListener("click", async () => {
       const sidebar = document.getElementById(SIDEBAR_ID);
       if (sidebar) {
         fecharSidebar();
+        buttonChat.style.opacity = "0";
+        buttonChat.style.pointerEvents = "none";
+        button.textContent = "Fechar";
+
+        const logado = await verificarLogin();
+        criarSidebar(null, !logado);
         return;
       }
+
+      buttonChat.style.opacity = "0";
+      buttonChat.style.pointerEvents = "none";
+      button.textContent = "Fechar";
+
       const logado = await verificarLogin();
       criarSidebar(null, !logado);
     });
-
-    document.body.appendChild(button);
-    document.body.appendChild(buttonChat);
   }
 
   function init() {

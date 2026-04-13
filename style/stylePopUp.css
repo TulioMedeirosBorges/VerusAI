@@ -3,12 +3,71 @@
   padding: 0;
 }
 
+:root {
+  /* Fundo */
+  --bg-primary: #ffffff;
+  --bg-input: #d9d9d9;
+
+  /* Texto */
+  --text-primary: #000000;
+  --text-secondary: #888888;
+  --text-button: #ffffff;
+  --text-error: red;
+
+  /* Botões */
+  --btn-primary-bg: #000000;
+  --btn-primary-hover: #4b4b4b;
+  --btn-google-border: #d0d0d0;
+  --btn-google-hover-bg: #000000;
+  --btn-google-hover-text: #ffffff;
+
+  /* Bordas */
+  --border-input-error: red;
+
+  /* Links */
+  --link-color: #888888;
+  --link-hover: #f1ae2b;
+
+  /* Força da senha */
+  --senha-fraca: #dc3545;
+  --senha-media: #ffc107;
+  --senha-forte: #28a745;
+  --senha-barra-vazia: #dddddd;
+}
+
+/* ===== TEMA ESCURO ===== */
+:root.tema-escuro {
+  --bg-primary: #1a1a1a;
+  --bg-input: #2e2e2e;
+
+  --text-primary: #ffffff;
+  --text-secondary: #aaaaaa;
+  --text-button: #ffffff;
+  --text-error: #ff6b6b;
+
+  --btn-primary-bg: #f1ae2b;
+  --btn-primary-hover: #e09d1a;
+  --btn-google-border: #444444;
+  --btn-google-hover-bg: #f1ae2b;
+  --btn-google-hover-text: #000000;
+
+  --border-input-error: #ff6b6b;
+
+  --link-color: #aaaaaa;
+  --link-hover: #f1ae2b;
+
+  --senha-barra-vazia: #444444;
+}
+
 #bodyExtension {
   border-style: solid;
-
   font-family: Arial, Helvetica, sans-serif;
-
   padding: 15px 30px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .header {
@@ -36,19 +95,21 @@
   font-size: medium;
   padding-top: 10px;
 
+  label {
+    color: var(--text-primary);
+  }
+
   input {
     border-radius: 10px;
     border-style: none;
-
-    background-color: #d9d9d9;
-
+    background-color: var(--bg-input);
+    color: var(--text-primary);
     height: 40px;
     width: 225px;
-
     padding-left: 5px;
     margin: 5px 0px 10px 0px;
-
     font-size: small;
+    transition: background-color 0.3s ease;
   }
 }
 
@@ -56,26 +117,26 @@
   justify-self: center;
   text-align: center;
   padding-top: 10px;
+
   .buttonConfirm {
     padding-bottom: 7px;
+
     #confirm {
       width: 230px;
       height: 40px;
-
       border-radius: 12px;
       border-style: none;
-
-      color: white;
-
-      background: #000000;
+      color: var(--text-button);
+      background: var(--btn-primary-bg);
+      cursor: pointer;
+      transition: background 0.3s ease;
 
       p {
         font-size: 15px;
       }
     }
     #confirm:hover {
-      background: #4b4b4b;
-
+      background: var(--btn-primary-hover);
       cursor: pointer;
     }
   }
@@ -83,20 +144,20 @@
 
 .googleButton {
   padding-bottom: 5px;
+
   .google {
     align-items: center;
     justify-content: center;
-
     display: flex;
-
     padding: 6px 37px;
     gap: 10px;
-
     border-radius: 12px;
-    border: solid #d0d0d0 0.5px;
-
+    border: solid var(--btn-google-border) 0.5px;
     background: none;
-    align-items: center;
+    color: var(--text-primary);
+    transition:
+      background 0.3s ease,
+      color 0.3s ease;
 
     #googleIcon {
       width: 15px;
@@ -109,22 +170,22 @@
 }
 
 .google:hover {
-  background: #000000;
-  color: white;
-
+  background: var(--btn-google-hover-bg);
+  color: var(--btn-google-hover-text);
   border: none;
   border-radius: 12px;
   padding: 7px 37px;
-
   cursor: pointer;
 }
+
 .erro {
-  color: red;
+  color: var(--text-error);
   font-size: 12px;
   display: flex;
   align-items: center;
   max-width: 230px;
 }
+
 .icon-warning {
   width: 16px;
   height: 16px;
@@ -132,9 +193,9 @@
   padding-right: 5px;
   padding-bottom: 2px;
 }
-/* Borda vermelha no campo com erro */
+
 input.input-erro {
-  border: 1px solid red;
+  border: 1px solid var(--border-input-error) !important;
 }
 
 .recuperacao {
@@ -144,13 +205,13 @@ input.input-erro {
 .recuperacao h2 {
   font-size: 16px;
   font-weight: 700;
-  color: black;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .subtitulo {
   font-size: 12px;
-  color: #888;
+  color: var(--text-secondary);
   margin-bottom: 12px;
 }
 
@@ -161,12 +222,12 @@ input.input-erro {
 
 .esqueci_senha a {
   font-size: 12px;
-  color: #888;
+  color: var(--link-color);
   text-decoration: none;
 }
 
 .esqueci_senha a:hover {
-  color: #f1ae2b;
+  color: var(--link-hover);
 }
 
 .senha-forca {
@@ -179,21 +240,22 @@ input.input-erro {
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: #ddd;
+  background: var(--senha-barra-vazia);
   transition: background 0.3s ease;
 }
 
 .senha-forca-barra.ativa-fraca {
-  background: #dc3545;
+  background: var(--senha-fraca);
 }
 .senha-forca-barra.ativa-media {
-  background: #ffc107;
+  background: var(--senha-media);
 }
 .senha-forca-barra.ativa-forte {
-  background: #28a745;
+  background: var(--senha-forte);
 }
 
 .senha-forca-texto {
   font-size: 11px;
   margin-top: 3px;
+  color: var(--text-secondary);
 }

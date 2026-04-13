@@ -934,6 +934,7 @@ aside.tema-escuro #chatInput {
   display: flex;
   align-items: center;
   gap: 4px;
+  width: 43px;
 }
 
 .login_popup_voltar:hover {
