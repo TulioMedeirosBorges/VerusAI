@@ -119,13 +119,11 @@ app.post("/login-google", async (req, res) => {
     );
   }
 
-  res
-    .status(200)
-    .json({
-      mensagem: "Login com Google realizado!",
-      email,
-      nome: nome || email.split("@")[0],
-    });
+  res.status(200).json({
+    mensagem: "Login com Google realizado!",
+    email,
+    nome: nome || email.split("@")[0],
+  });
 });
 
 app.post("/salvar-configs", (req, res) => {

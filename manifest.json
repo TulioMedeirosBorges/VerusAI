@@ -17,10 +17,10 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/image/*",
+        "assets/images/*",
         "assets/icons/*",
-        "/style/style.css",
-        "style/styleSidebar.css"
+        "src/shared/content.css",
+        "src/shared/sidebar.css"
       ],
       "matches": ["<all_urls>"]
     }
@@ -29,23 +29,23 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "js/private/captureFrames.js",
-        "js/private/analyzeWithClaude.js",
-        "js/public/content.js"
+        "src/content/captureFrames.js",
+        "src/content/analyzeWithGemini.js",
+        "src/content/content.js"
       ],
       "css": [
-        "style/style.css",
-        "style/stylePopUp.css",
-        "style/styleRegister.css"
+        "src/shared/content.css",
+        "src/pages/login/login.css",
+        "src/pages/register/register.css"
       ],
       "run_at": "document_idle"
     }
   ],
   "background": {
-    "service_worker": "js/public/background.js"
+    "service_worker": "src/background/background.js"
   },
   "action": {
     "default_title": "Analiser FakeNews",
-    "default_popup": "pages/popup.html"
+    "default_popup": "src/pages/login/login.html"
   }
 }

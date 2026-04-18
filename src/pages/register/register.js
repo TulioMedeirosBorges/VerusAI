@@ -1,4 +1,5 @@
-import { Icons } from "./icon.js";
+import { Icons } from "../../shared/icons.js";
+
 ["PasswordConfirmRegister"].forEach((id) => {
   document.getElementById(id).addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -20,10 +21,12 @@ botao.addEventListener("click", async () => {
   const emailInput = document.getElementById("E-mailRegister");
   const senhaInput = document.getElementById("PasswordRegister");
   const senhaConfirmInput = document.getElementById("PasswordConfirmRegister");
+  const nomeInput = document.getElementById("userName");
 
   const email = emailInput.value.trim();
   const senha = senhaInput.value;
   const senhaConfirm = senhaConfirmInput.value;
+  const nome = nomeInput.value.trim();
 
   limparErros();
 
@@ -91,13 +94,13 @@ botao.addEventListener("click", async () => {
     const resposta = await fetch("http://localhost:3000/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, senha }),
+      body: JSON.stringify({ email, senha, nome }),
     });
 
     const dados = await resposta.json();
 
     if (resposta.ok) {
-      mostrarSucesso(); // ✅ aqui
+      mostrarSucesso();
     } else {
       mostrarErro(emailInput, "erroEmail", `${Icons("warning")} ${dados.erro}`);
     }
@@ -110,7 +113,6 @@ botao.addEventListener("click", async () => {
   }
 });
 
-// ✅ Função de sucesso
 function mostrarSucesso() {
   const tela = document.getElementById("telaSuccesso");
   tela.classList.add("ativo");
@@ -124,7 +126,7 @@ function mostrarSucesso() {
   }, 100);
 
   setTimeout(() => {
-    window.location.href = "./popup.html";
+    window.location.href = "../login/login.html";
   }, 2200);
 }
 

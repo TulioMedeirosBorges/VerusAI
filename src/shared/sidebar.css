@@ -298,7 +298,7 @@ aside {
 }
 
 .registro_popup_input {
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 /* Mensagens de erro inline */
@@ -564,8 +564,8 @@ aside {
 }
 
 .login_gap {
+  gap: 2px;
   display: flex;
-  gap: 5px;
   flex-wrap: nowrap;
   flex-direction: column;
 }
@@ -593,7 +593,7 @@ aside {
   display: block;
 }
 .recuperar_popup_input {
-  margin-bottom: 10px;
+  margin-bottom: 2px;
 }
 
 .login_popup_logo {

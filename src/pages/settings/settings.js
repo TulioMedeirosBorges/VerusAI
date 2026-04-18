@@ -1,4 +1,4 @@
-import { Icons } from "./icon.js";
+import { Icons } from "../../shared/icons.js";
 
 document.getElementById("closeIcon").innerHTML = Icons("close");
 document.getElementById("logoutbtn").innerHTML = Icons("logout");
@@ -17,7 +17,7 @@ document
 
 document.getElementById("logout").addEventListener("click", () => {
   chrome.storage.local.remove(["logado", "email"], () => {
-    window.location.href = "./popup.html";
+    window.location.href = "../login/login.html";
   });
 });
 
@@ -26,10 +26,10 @@ const min = 12,
   max = 24;
 let emailUsuario = "";
 
-chrome.storage.local.get("email", (resultado) => {
+chrome.storage.local.get(["email", "nome"], (resultado) => {
   emailUsuario = resultado.email;
-  const nomeUsuario = resultado.email.split("@")[0];
-  document.getElementById("nomeUsuario").textContent = nomeUsuario;
+  document.getElementById("nomeUsuario").textContent =
+    resultado.nome || resultado.email.split("@")[0];
   carregarConfigs();
 });
 
@@ -57,7 +57,6 @@ plus.addEventListener("click", () => {
   salvarConfigs();
 });
 
-// ✅ forEach com leitor incluído
 document.querySelectorAll(".retangle").forEach((btn) => {
   btn.addEventListener("click", () => {
     btn.classList.toggle("ativo");
@@ -79,22 +78,13 @@ document.querySelectorAll(".retangle").forEach((btn) => {
 });
 
 function ativarAltoContraste(ativo) {
-  if (ativo) {
-    document.documentElement.classList.add("alto-contraste");
-  } else {
-    document.documentElement.classList.remove("alto-contraste");
-  }
+  document.documentElement.classList.toggle("alto-contraste", ativo);
 }
 
 function ativarTemaEscuro(ativo) {
-  if (ativo) {
-    document.documentElement.classList.add("tema");
-  } else {
-    document.documentElement.classList.remove("tema");
-  }
+  document.documentElement.classList.toggle("tema", ativo);
 }
 
-// ✅ Função separada para poder remover o evento depois
 function lerTextoConfig() {
   const texto = window.getSelection().toString().trim();
   if (texto) {
@@ -154,7 +144,6 @@ async function carregarConfigs() {
       updateBar();
     }
 
-    // ✅ Restaura os toggles incluindo o leitor
     if (toggles) {
       document.querySelectorAll(".retangle").forEach((btn) => {
         if (toggles[btn.dataset.id]) {

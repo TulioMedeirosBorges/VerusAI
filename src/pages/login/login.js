@@ -1,4 +1,4 @@
-import { Icons } from "./icon.js";
+import { Icons } from "../../shared/icons.js";
 
 ["Password"].forEach((id) => {
   document.getElementById(id).addEventListener("keydown", (e) => {
@@ -13,13 +13,12 @@ document
   .getElementById("closeIcon")
   .addEventListener("click", () => window.close());
 
-// ✅ Logo atualizada
 document.getElementById("logo").src = chrome.runtime.getURL(
-  "/assets/image/VerusIAAtivo 1.svg",
+  "/assets/images/VerusIAAtivo 1.svg",
 );
 
 chrome.storage.local.get("logado", (resultado) => {
-  if (resultado.logado) window.location.href = "./config.html";
+  if (resultado.logado) window.location.href = "../settings/settings.html";
 });
 
 const botao = document.getElementById("confirm");
@@ -80,7 +79,7 @@ botao.addEventListener("click", async () => {
       chrome.storage.local.set(
         { logado: true, email: dados.email, nome: dados.nome },
         () => {
-          window.location.href = "./config.html";
+          window.location.href = "../settings/settings.html";
         },
       );
     } else {
@@ -128,9 +127,7 @@ document.getElementById("Google").addEventListener("click", () => {
 
     const respostaGoogle = await fetch(
       "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
+      { headers: { Authorization: `Bearer ${token}` } },
     );
 
     const usuarioGoogle = await respostaGoogle.json();
@@ -147,13 +144,12 @@ document.getElementById("Google").addEventListener("click", () => {
     chrome.storage.local.set(
       { logado: true, email: usuarioGoogle.email, nome: usuarioGoogle.name },
       () => {
-        window.location.href = "./config.html";
+        window.location.href = "../settings/settings.html";
       },
     );
   });
 });
 
-// ✅ Recuperação de senha
 const linkEsqueciSenha = document.getElementById("linkEsqueciSenha");
 linkEsqueciSenha.addEventListener("click", (e) => {
   e.preventDefault();
@@ -272,7 +268,6 @@ function mostrarTelaCodigoESenha(email) {
     </div>
   `;
 
-  // ✅ Indicador de força da senha
   document.getElementById("novaSenha").addEventListener("input", () => {
     const senha = document.getElementById("novaSenha").value;
     const barras = document.querySelectorAll("#senha_forca .senha-forca-barra");
@@ -353,7 +348,6 @@ function mostrarTelaCodigoESenha(email) {
         temErro = true;
       }
 
-      // ✅ Validações iguais ao sidebar
       if (!novaSenha) {
         document.getElementById("erroNovaSenha").innerHTML =
           `${Icons("warning")} Preencha a senha.`;

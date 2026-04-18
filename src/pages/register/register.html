@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <link rel="stylesheet" href="/style/styleRegister.css" />
+    <link rel="stylesheet" href="register.css" />
   </head>
   <body id="bodyExtensionRegister">
     <header id="headerPageRegister">
@@ -12,7 +12,7 @@
         <div class="imgRegister">
           <img
             id="logoRegister"
-            src="/assets/image/VerusIAAtivo 1.svg"
+            src="/assets/images/VerusIAAtivo 1.svg"
             alt=""
           />
         </div>
@@ -21,6 +21,15 @@
     <main>
       <div class="mainRegister">
         <div class="inputRegister">
+          <div class="nameUser">
+            <label for="name">Seu Nome(Opcional)</label><br />
+            <input
+              type="text"
+              class="name"
+              id="userName"
+              placeholder="Digite seu nome"
+            />
+          </div>
           <div class="E-mailRegister">
             <label for="email">E-mail</label><br />
             <input
@@ -59,7 +68,9 @@
             </button>
           </div>
           <div class="login">
-            <p>Already have an account?<a href="./popup.html">Log In</a></p>
+            <p>
+              Already have an account?<a href="../login/login.html">Log In</a>
+            </p>
           </div>
         </div>
       </div>
@@ -70,7 +81,6 @@
         <p>Cadastro realizado <br />com sucesso!</p>
       </div>
     </div>
-    <script type="module" src="/js/public/popup.js"></script>
-    <script type="module" src="/js/public/register.js"></script>
+    <script type="module" src="register.js"></script>
   </body>
 </html>
