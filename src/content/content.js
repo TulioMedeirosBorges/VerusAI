@@ -6,6 +6,7 @@
   const STYLE_GUARD = "secure_guard";
   const logo = chrome.runtime.getURL("/assets/images/VerusIAAtivo 1.svg");
   const iconDarkmode = chrome.runtime.getURL("assets/icons/dark_mode.svg");
+  const iconSun = chrome.runtime.getURL("assets/icons/Sun.svg");
   const iconSettings = chrome.runtime.getURL("assets/icons/settings.svg");
   const iconGoogle = chrome.runtime.getURL("assets/icons/google.svg");
   const iconLogout = chrome.runtime.getURL("assets/icons/logout.svg");
@@ -13,6 +14,23 @@
 
   if (window[STYLE_GUARD]) return;
   window[STYLE_GUARD] = true;
+
+  // Guard para contexto invalidado (extensão recarregada)
+  function isContextValid() {
+    try {
+      return !!chrome.runtime?.id;
+    } catch {
+      return false;
+    }
+  }
+
+  function chromeStorage(method, ...args) {
+    if (!isContextValid()) {
+      console.warn("[VerusAI] Contexto invalidado, recarregue a página.");
+      return method === "get" ? Promise.resolve({}) : Promise.resolve();
+    }
+    return new Promise((resolve) => chrome.storage.local[method](...args, resolve));
+  }
 
   let sidebarAberto = false;
 
@@ -68,11 +86,7 @@
   document.head.appendChild(buttonStyle);
 
   function verificarLogin() {
-    return new Promise((resolve) => {
-      chrome.storage.local.get("logado", (resultado) => {
-        resolve(resultado.logado === true);
-      });
-    });
+    return chromeStorage("get", "logado").then((r) => r.logado === true);
   }
 
   function bloquearTeclado(e) {
@@ -169,7 +183,29 @@
     return false;
   }
 
-  function criarSidebar(analysis = null, mostrarLoginImediato = false) {
+  function siteNameFromUrl(url) {
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.replace(/^www\./, "");
+      const parts = host.split(".");
+
+      // Para redes sociais, pega o nome do perfil do pathname
+      const socialDomains = ["instagram.com", "twitter.com", "x.com", "tiktok.com", "facebook.com", "youtube.com"];
+      if (socialDomains.some(d => host.includes(d))) {
+        const match = parsed.pathname.match(/^\/([^/]+)/);
+        if (match && match[1] && match[1] !== "p" && match[1] !== "reel") {
+          return "@" + match[1];
+        }
+      }
+
+      const name = parts.length >= 3 ? parts.slice(0, -1).join(".") : parts.slice(0, -1).join(".") || host;
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    } catch {
+      return url;
+    }
+  }
+
+  function criarSidebar(analysis = null, mostrarLoginImediato = false, payload = null) {
     sidebarAberto = true;
 
     const overlay = document.createElement("div");
@@ -289,8 +325,7 @@
     const menuLess = shadow.getElementById("menuLess");
     const menuPlus = shadow.getElementById("menuPlus");
 
-    // Carrega nome do usuário
-    chrome.storage.local.get(["email", "nome"], (resultado) => {
+    chromeStorage("get", ["email", "nome"]).then((resultado) => {
       if (resultado.nome) {
         menuNomeUsuario.textContent = resultado.nome;
       } else if (resultado.email) {
@@ -310,11 +345,8 @@
       menuConfig.classList.add("escondido");
     });
 
-    // Logout
     menuLogout.addEventListener("click", () => {
-      chrome.storage.local.remove(["logado", "email", "configs"], () => {
-        fecharSidebar();
-      });
+      chromeStorage("remove", ["logado", "email", "configs"]).then(() => fecharSidebar());
     });
 
     // Tamanho do texto
@@ -372,7 +404,6 @@
       });
     });
 
-    // Salva configs no chrome.storage.local e no servidor
     async function salvarConfigsMenu() {
       const toggles = {};
       shadow.querySelectorAll(".retangleConfig").forEach((btn) => {
@@ -380,23 +411,20 @@
       });
 
       const configs = { fontSize, toggles };
-      chrome.storage.local.set({ configs });
+      await chromeStorage("set", { configs });
+      if (isContextValid()) chrome.runtime.sendMessage({ type: "CONFIGS_UPDATED", configs });
 
-      chrome.storage.local.get("email", async (resultado) => {
-        if (!resultado.email) return;
-        try {
-          await fetch("http://localhost:3000/salvar-configs", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: resultado.email, configs }),
-          });
-        } catch (e) {
-          console.warn(
-            "[VerusAI] Falha ao salvar configs no servidor:",
-            e.message,
-          );
-        }
-      });
+      const resultado = await chromeStorage("get", "email");
+      if (!resultado.email) return;
+      try {
+        await fetch("http://localhost:3000/salvar-configs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: resultado.email, configs }),
+        });
+      } catch (e) {
+        console.warn("[VerusAI] Falha ao salvar configs no servidor:", e.message);
+      }
     }
 
     // Aplica configs no DOM
@@ -415,13 +443,12 @@
 
           btn.classList.toggle("ativo-config", ativo);
 
-          if (id === "contraste") {
-            // ✅ Aplica NO aside
-            open.classList.toggle("alto-contraste", ativo);
-          }
+          if (id === "contraste") open.classList.toggle("alto-contraste", ativo);
           if (id === "tema") {
-            // ✅ Aplica NO aside
             open.classList.toggle("tema-escuro", ativo);
+            // Sincroniza ícone do botão de tema no header
+            const img = shadow.querySelector(".circleTema img");
+            if (img) img.src = ativo ? iconSun : iconDarkmode;
           }
           if (id === "leitornoticias") {
             document.removeEventListener("mouseup", lerTextoSelecionado);
@@ -435,55 +462,190 @@
       }
     }
 
-    // Carrega configs do servidor com fallback para chrome.storage.local
     async function carregarConfigsMenu() {
-      return new Promise((resolve) => {
-        chrome.storage.local.get(["email", "configs"], async (resultado) => {
-          let configs = resultado.configs || null;
+      const resultado = await chromeStorage("get", ["email", "configs"]);
+      let configs = resultado.configs || null;
 
-          if (resultado.email) {
-            try {
-              const resposta = await fetch(
-                "http://localhost:3000/carregar-configs",
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ email: resultado.email }),
-                },
-              );
-
-              if (resposta.ok) {
-                const dados = await resposta.json();
-                if (dados.configs && Object.keys(dados.configs).length > 0) {
-                  configs = dados.configs;
-                  chrome.storage.local.set({ configs });
-                }
-              }
-            } catch (e) {
-              console.warn(
-                "[VerusAI] Usando configs locais (servidor indisponível)",
-              );
+      if (resultado.email) {
+        try {
+          const resposta = await fetch("http://localhost:3000/carregar-configs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: resultado.email }),
+          });
+          if (resposta.ok) {
+            const dados = await resposta.json();
+            if (dados.configs && Object.keys(dados.configs).length > 0) {
+              configs = dados.configs;
+              await chromeStorage("set", { configs });
             }
           }
+        } catch (e) {
+          console.warn("[VerusAI] Usando configs locais (servidor indisponível)");
+        }
+      }
 
-          if (configs) aplicarConfigs(configs);
-          resolve(configs);
-        });
-      });
+      if (configs) aplicarConfigs(configs);
+      return configs;
     }
 
     // Carrega configs ao abrir a sidebar
     carregarConfigsMenu();
 
+    // Botão de tema rápido no header
+    const retangleTema = shadow.querySelector(".retangleTema");
+    const iconTemaImg = shadow.querySelector(".circleTema img");
+
+    retangleTema.addEventListener("click", () => {
+      const temaAtivo = open.classList.toggle("tema-escuro");
+
+      // Troca ícone
+      iconTemaImg.src = temaAtivo ? iconSun : iconDarkmode;
+
+      // Sincroniza com o toggle do menuConfig
+      const toggleTema = shadow.querySelector(".retangleConfig[data-config='tema']");
+      if (toggleTema) toggleTema.classList.toggle("ativo-config", temaAtivo);
+
+      salvarConfigsMenu();
+    });
     // Primeira mensagem da IA
     if (analysis) {
+      console.log("[VerusAI] analysis recebido:", JSON.stringify(analysis).slice(0, 300));
+      // Atualiza barra de confiabilidade
+      const score = analysis.confidenceScore ?? 0;
+      const label = analysis.confidenceLabel ?? "baixa";
+      const verdict = analysis.overallVerdict ?? "unverifiable";
+
+      const porcentEl = shadow.getElementById("porcent");
+      const labelEl = shadow.querySelector(".porcentconf p");
+      const confbar = shadow.getElementById("confbar");
+
+      if (porcentEl) porcentEl.querySelector("p").textContent = `${score}%`;
+      if (labelEl) {
+        const pontuacao = analysis.pontuacao ?? null;
+        const faixaLabel = pontuacao !== null
+          ? pontuacao >= 8 ? "Alta confiabilidade"
+          : pontuacao >= 4 ? "Média confiabilidade"
+          : pontuacao >= 1 ? "Baixa confiabilidade"
+          : "Provável fake news"
+          : label.toUpperCase();
+        labelEl.textContent = faixaLabel;
+      }
+
+      // Indicador deslizante sobre o gradiente vermelho→amarelo→verde
+      if (confbar) {
+        const verdictColor = {
+          true: "#3fb537",
+          false: "#ff5858",
+          mixed: "#f1ae2b",
+          unverifiable: "#aaa",
+        }[verdict] || "#aaa";
+
+        const indicator = document.createElement("div");
+        indicator.style.cssText = `
+          position: absolute;
+          top: 50%;
+          left: 0%;
+          transform: translate(-50%, -50%);
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #fff;
+          border: 2px solid ${verdictColor};
+          transition: left 0.8s cubic-bezier(0.34,1.56,0.64,1);
+          box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+          z-index: 1;
+        `;
+        confbar.appendChild(indicator);
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            confbar.style.setProperty("--conf-score", `${score}%`);
+            indicator.style.left = `${score}%`;
+          });
+        });
+      }
       const msgIA = document.createElement("div");
       msgIA.className = "mensagemIAPrimeira";
+
+      const sourceHTML = analysis.source ? (() => {
+        const s = analysis.source;
+        const credColor = { alta: "#3fb537", média: "#f1ae2b", baixa: "#ff5858", desconhecida: "#aaa" }[s.credibility] || "#aaa";
+        const typeLabel = { news_outlet: "Veículo jornalístico", influencer: "Influenciador", official: "Canal oficial", unknown: "Canal desconhecido" }[s.channelType] || "";
+        const exclusiveNote = s.isExclusive && s.exclusivityNote
+          ? `<p class='source-exclusive'>⚠️ ${s.exclusivityNote}</p>` : "";
+        const officialLink = s.officialArticleUrl
+          ? `<a href='${s.officialArticleUrl}' target='_blank' class='source-link'>🔗 Ver matéria no site oficial</a>` : "";
+        const channelLink = s.sourceUrl
+          ? `<a href='${s.sourceUrl}' target='_blank' class='source-link'>${s.channelName || s.sourceHandle || siteNameFromUrl(s.sourceUrl)}</a>`
+          : `<strong>${s.channelName || s.sourceHandle || ""}</strong>`;
+        return `<div class='source-card'>
+          <div class='source-card-header'>${channelLink} <span class='source-type-label'>${typeLabel}</span> <span style='color:${credColor};font-weight:700'>${s.credibility}</span></div>
+          ${s.channelSummary ? `<p class='source-card-summary'>${s.channelSummary}</p>` : ""}
+          ${exclusiveNote}
+          ${officialLink}
+        </div>`;
+      })() : "";
+
+      const claimsHTML = analysis.claims?.length > 0
+        ? analysis.claims.map((c) => {
+            const verdictLabel = {
+              supported: "✅ Confirmada",
+              disputed: "❌ Contestada",
+              mixed: "⚠️ Divergente",
+              insufficient_evidence: "🔍 Não há como confirmar",
+              not_checkable: "— Não verificável",
+            }[c.verdict] || c.verdict;
+
+            const sourcesHTML = c.sources?.length > 0
+              ? c.sources.map((s) => `<div class='source-item'><a href='${s.url}' target='_blank' class='source-link'>${siteNameFromUrl(s.url)}</a>${s.snippet ? `<span class='source-snippet'>${s.snippet}</span>` : ""}</div>`).join("")
+              : "";
+
+              const claimTopic = c.summary
+              ? c.summary.split(/[.,!?]/)[0].trim()
+              : c.text;
+
+            return `<div class='claim-item'>
+              <p class='claim-text'>${claimTopic}</p>
+              <span class='claim-verdict'>${verdictLabel}</span>
+              ${c.summary ? `<p class='claim-summary'>${c.summary}</p>` : ""}
+              ${sourcesHTML ? `<div class='claim-sources'>${sourcesHTML}</div>` : ""}
+            </div>`;
+          }).join("")
+        : "";
+
+      // Agrega todas as fontes únicas usadas — deduplica por domínio
+      const todasFontes = (analysis.claims || []).flatMap((c) => c.sources || []);
+      const fontesUnicas = [];
+      const seenDominios = new Set();
+
+      const adicionarFonte = (url) => {
+        if (!url) return;
+        try {
+          const dominio = new URL(url).hostname.replace(/^www\./, "");
+          if (seenDominios.has(dominio)) return;
+          seenDominios.add(dominio);
+          fontesUnicas.push({ title: siteNameFromUrl(url), url });
+        } catch {}
+      };
+
+      for (const f of todasFontes) adicionarFonte(f.url);
+      for (const l of (analysis.links || [])) adicionarFonte(l.url);
+
+      // Adiciona a página atual como fonte se houver poucas fontes externas
+      const urlAtual = window.location.href;
+      if (fontesUnicas.length < 3) adicionarFonte(urlAtual);
+
+      const linksHTML = fontesUnicas.length > 0
+        ? fontesUnicas.map((f) => `<a href='${f.url}' target='_blank' class='footer-source-link'>${f.title}</a>`).join("")
+        : "";
+
       msgIA.innerHTML = `
-        <h1 class="result">Resultado da Verificação</h1>
-        <p id="textAnalysis">${analysis.texto}</p>
-        <hr/>
-        ${analysis.link ? `<div id="footerAnalysis">FONTES<br/>${analysis.link}</div>` : ""}
+        <p class="result">Resultado da Verificação</p>
+        <p id="textAnalysis">${analysis.summary || "Análise concluída."}</p>
+        ${sourceHTML}
+        ${claimsHTML ? `<div id="claimsSection"><p class="claims-title">Afirmações verificadas</p>${claimsHTML}</div>` : ""}
+        ${linksHTML ? `<div id="footerAnalysis"><p class="claims-title">Fontes consultadas</p><div class="footer-links-wrapper">${linksHTML}</div></div>` : ""}
       `;
       chatMensagens.appendChild(msgIA);
       chatMensagens.scrollTop = chatMensagens.scrollHeight;
@@ -861,13 +1023,9 @@
             const dados = await resposta.json();
 
             if (resposta.ok) {
-              chrome.storage.local.set(
-                { logado: true, email: dados.email },
-                () => {
-                  fecharPopupEMascara();
-                  menuNomeUsuario.textContent = dados.email.split("@")[0];
-                },
-              );
+              await chromeStorage("set", { logado: true, email: dados.email });
+              fecharPopupEMascara();
+              menuNomeUsuario.textContent = dados.email.split("@")[0];
             } else {
               if (dados.campo === "senha") {
                 setErro("popup_senha_login", "erroPasswordLogin", dados.erro);
@@ -913,13 +1071,10 @@
 
               const user = await res.json();
 
-              chrome.storage.local.set(
-                { logado: true, email: user.email },
-                () => {
-                  fecharPopupEMascara();
-                  menuNomeUsuario.textContent = user.email.split("@")[0];
-                },
-              );
+              chromeStorage("set", { logado: true, email: user.email }).then(() => {
+                fecharPopupEMascara();
+                menuNomeUsuario.textContent = user.email.split("@")[0];
+              });
             } catch (error) {
               console.error("Erro ao processar login Google:", error);
               alert("Erro ao processar login.");
@@ -1091,7 +1246,7 @@
             const dados = await resposta.json();
 
             if (resposta.ok) {
-              chrome.storage.local.set({ logado: true, email }, () => {
+              chromeStorage("set", { logado: true, email }).then(() => {
                 menuNomeUsuario.textContent = nome || email.split("@")[0];
                 mudarTela("tela_sucesso_cadastro");
               });
@@ -1338,9 +1493,10 @@
       chatMensagens.scrollTop = chatMensagens.scrollHeight;
 
       try {
-        const resposta = await analyzeWithClaude(texto, [], null);
-        msgIA.innerHTML = resposta.texto || resposta;
-        if (resposta.link) msgIA.innerHTML += `<br/><br/>${resposta.link}`;
+        const resposta = await analyzeWithOpenAI({ text: texto, url: window.location.href, title: null, foundLinks: [], imageUrl: null, platform: "web", hasMultipleTopics: false }, []);
+        const linksHTML = resposta.links?.length > 0 ? resposta.links.map(l => `<a href='${l.url}' target='_blank'>${l.title}</a>`).join(" · ") : "";
+        msgIA.innerHTML = resposta.summary || resposta;
+        if (linksHTML) msgIA.innerHTML += `<br/><br/>${linksHTML}`;
       } catch (e) {
         msgIA.textContent = "Erro ao obter resposta.";
       }
@@ -1385,28 +1541,69 @@
       const expanded = expandPost(article);
       if (expanded) await new Promise((resolve) => setTimeout(resolve, 400));
 
-      const text = article.innerText;
+      const payload = extractPagePayload(article);
       const video = article.querySelector("video");
-      const img = article.querySelector("img");
 
       button.textContent = "Analisando...";
       button.disabled = true;
 
-      let analysis = { texto: "", link: "" };
+      // Popup de progresso
+      const popup = document.createElement("div");
+      popup.id = "verus_progress_popup";
+      popup.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        right: 16px;
+        background: #000;
+        color: #00ff41;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 11px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #00ff41;
+        z-index: 2147483646;
+        max-width: 280px;
+        line-height: 1.6;
+        box-shadow: 0 0 12px rgba(0,255,65,0.3);
+        white-space: nowrap;
+      `;
+      document.body.appendChild(popup);
+
+      const etapas = [
+        "> Capturando conteúdo da página...",
+        "> Classificando tipo de conteúdo...",
+        "> Extraindo afirmações verificáveis...",
+        "> Buscando fontes e evidências...",
+        "> Verificando claims com busca web...",
+        "> Buscando matérias relacionadas...",
+        "> Analisando canal/perfil da fonte...",
+        "> Consolidando resultado final...",
+      ];
+
+      let etapaAtual = 0;
+      popup.textContent = etapas[0];
+      const intervalo = setInterval(() => {
+        etapaAtual = Math.min(etapaAtual + 1, etapas.length - 1);
+        popup.textContent = etapas[etapaAtual];
+      }, 4000);
+
+      let analysis = { summary: "", links: [] };
 
       try {
         if (video) {
           const frames = await captureFrames(video);
-          analysis = await analyzeWithClaude(text, frames);
+          analysis = await analyzeWithOpenAI(payload, frames);
         } else {
-          const imageUrl = img ? img.src : null;
-          analysis = await analyzeWithClaude(text, [], imageUrl);
+          analysis = await analyzeWithOpenAI(payload, []);
         }
       } catch (e) {
-        analysis = { texto: "Erro ao analisar o conteúdo.", link: "" };
+        analysis = { pageType: "error", summary: "Erro ao analisar o conteúdo.", overallVerdict: "unverifiable", confidenceLabel: "baixa", confidenceScore: 0, claims: [], links: [], warnings: ["Erro desconhecido"] };
       }
 
-      criarSidebar(analysis);
+      clearInterval(intervalo);
+      popup.remove();
+
+      criarSidebar(analysis, false, payload);
       button.textContent = "Fechar";
       button.disabled = false;
     });
@@ -1445,18 +1642,52 @@
     subtree: true,
   });
 
-  chrome.storage.local.get("configs", (resultado) => {
+  chromeStorage("get", "configs").then((resultado) => {
     if (resultado.configs?.toggles?.leitornoticias) ativarLeitor();
   });
 
+  if (!isContextValid()) return;
   chrome.storage.onChanged.addListener((changes) => {
-    if (changes.configs) {
-      if (changes.configs.newValue?.toggles?.leitornoticias) {
-        ativarLeitor();
-      } else {
-        desativarLeitor();
+    if (!changes.configs) return;
+    const configs = changes.configs.newValue;
+    if (!configs) return;
+
+    // Aplica no sidebar se estiver aberto
+    const host = document.getElementById(SIDEBAR_ID);
+    if (host?.shadowRoot) {
+      const shadow = host.shadowRoot;
+      const open = shadow.querySelector("aside");
+      if (open) {
+        const { fontSize, toggles } = configs;
+
+        if (fontSize !== undefined) {
+          const minFont = 12, maxFont = 24;
+          const px = Math.round(minFont + (fontSize / 100) * (maxFont - minFont));
+          open.style.setProperty("--font-size", px + "px");
+          const menuBar = shadow.getElementById("menuBar");
+          if (menuBar) menuBar.style.setProperty("--fill", fontSize + "%");
+        }
+
+        if (toggles) {
+          shadow.querySelectorAll(".retangleConfig").forEach((btn) => {
+            const id = btn.dataset.config;
+            const ativo = !!toggles[id];
+            btn.classList.toggle("ativo-config", ativo);
+            if (id === "contraste") open.classList.toggle("alto-contraste", ativo);
+            if (id === "tema") open.classList.toggle("tema-escuro", ativo);
+            if (id === "leitornoticias") {
+              document.removeEventListener("mouseup", lerTextoSelecionado);
+              if (ativo) document.addEventListener("mouseup", lerTextoSelecionado);
+              else speechSynthesis.cancel();
+            }
+          });
+        }
       }
     }
+
+    // Aplica leitor na página mesmo sem sidebar aberto
+    if (configs.toggles?.leitornoticias) ativarLeitor();
+    else desativarLeitor();
   });
 
   function ativarLeitor() {

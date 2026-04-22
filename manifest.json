@@ -30,13 +30,8 @@
       "matches": ["<all_urls>"],
       "js": [
         "src/content/captureFrames.js",
-        "src/content/analyzeWithGemini.js",
+        "src/content/analyzeWithOpenAI.js",
         "src/content/content.js"
-      ],
-      "css": [
-        "src/shared/content.css",
-        "src/pages/login/login.css",
-        "src/pages/register/register.css"
       ],
       "run_at": "document_idle"
     }

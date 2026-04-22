@@ -6,7 +6,18 @@
 }
 
 aside * {
-  font-size: var(--font-size, 14px);
+  font-size: inherit;
+}
+
+@keyframes sidebarEntrar {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 aside {
@@ -16,13 +27,13 @@ aside {
   z-index: 41235123;
   width: 350px;
   height: 500px;
-  background-color: white;
   border-radius: 20px;
-  border: solid 1px black;
-  color: black;
+  border: solid 1px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  font-size: var(--font-size, 14px);
+  animation: sidebarEntrar 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 #header {
@@ -67,6 +78,7 @@ aside {
   display: flex;
   align-items: center;
   cursor: pointer;
+  transition: background 0.3s ease;
 }
 
 .circleTema {
@@ -78,9 +90,19 @@ aside {
   left: -5px;
   z-index: 200;
   cursor: pointer;
+  transition: left 0.3s ease, background 0.3s ease;
 }
 
-.circleTema img.icon-darkmode {
+aside.tema-escuro .retangleTema {
+  background: #555;
+}
+
+aside.tema-escuro .circleTema {
+  left: 25px;
+  background: white;
+}
+
+.circleTema img {
   padding: 5px;
   width: 100%;
   height: 100%;
@@ -117,20 +139,16 @@ aside {
   align-items: center;
   gap: 8px;
   padding: 10px;
-  border-top: 1px solid #eee;
-  background: white;
+  border-top: 1px solid;
   border-radius: 0 0 20px 20px;
 }
 
 #chatInput {
   flex: 1;
-  border: solid 1px black;
+  border: solid 1px;
   border-radius: 999px;
   padding: 8px 14px;
-  background: #ffffff;
-  font-size: 13px;
   outline: none;
-  color: black;
 }
 
 #chatEnviar {
@@ -140,7 +158,6 @@ aside {
   width: 34px;
   height: 34px;
   cursor: pointer;
-  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -150,28 +167,124 @@ aside {
 .mensagemIAPrimeira {
   width: 100%;
   border-radius: 10px;
-  background: white;
   padding: 15px;
-  box-shadow:
-    rgba(0, 0, 0, 0.1) 0px 0px 5px 0px,
-    rgba(0, 0, 0, 0.1) 0px 0px 1px 0px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .mensagemIAPrimeira .result {
-  color: black;
-  font-size: medium;
-  padding-bottom: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.5;
 }
 
 .mensagemIAPrimeira #textAnalysis {
-  color: #000000;
+  line-height: 1.6;
   font-size: 13px;
-  padding-bottom: 5px;
-  line-height: 1.5;
 }
 
 .mensagemIAPrimeira #footerAnalysis {
-  padding-top: 5px;
+  font-size: 11px;
+  border-top: 1px solid var(--borda-item, #eee);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.footer-links-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.footer-source-link {
+  display: inline-block;
+  color: #0066cc;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg, #fff);
+  border: 1px solid var(--borda-item, #eee);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.footer-source-link:hover {
+  background: var(--bg-secondary, #f8f8f8);
+  text-decoration: underline;
+}
+
+#claimsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.claims-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.5;
+}
+
+.claim-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg, #fff);
+  border: 1px solid var(--borda-item, #eee);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.claim-text {
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.claim-verdict {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.claim-summary {
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: 0.75;
+}
+
+.claim-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+  padding-top: 6px;
+  border-top: 1px solid var(--borda-item, #eee);
+}
+
+.source-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.source-snippet {
+  display: block;
+  font-size: 10px;
+  opacity: 0.65;
+  font-style: italic;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .mensagemIAPrimeira a {
@@ -179,24 +292,62 @@ aside {
   text-decoration: underline;
 }
 
+.source-card {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border-left: 3px solid #f1ae2b;
+  background: var(--bg-secondary, #f8f8f8);
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.source-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.source-type-label {
+  color: var(--texto-secundario, #888);
+  font-size: 11px;
+}
+
+.source-card-summary {
+  color: var(--texto-secundario, #888);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.source-exclusive {
+  font-size: 11px;
+  color: #e67e00;
+}
+
+.source-link {
+  color: #0066cc;
+  text-decoration: underline;
+  font-size: 11px;
+}
+
 .mensagemUsuario {
   align-self: flex-end;
   background: #f1ae2b;
-  color: black;
+  color: #000;
   padding: 8px 12px;
   border-radius: 16px 16px 0 16px;
-  font-size: 13px;
   max-width: 80%;
   word-break: break-word;
 }
 
 .mensagemIA {
   align-self: flex-start;
-  background: #f0f0f0;
-  color: black;
   padding: 8px 12px;
   border-radius: 16px 16px 16px 0;
-  font-size: 13px;
   max-width: 80%;
   word-break: break-word;
   line-height: 1.5;
@@ -224,13 +375,29 @@ aside {
   width: 100%;
   height: 5px;
   border-radius: 20px;
+  background: #ddd;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: visible;
+}
+
+#confbar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: var(--conf-score, 0%);
+  border-radius: 20px;
   background: linear-gradient(
     90deg,
     rgba(255, 88, 88, 1) 0%,
     rgba(255, 244, 83, 1) 50%,
     rgba(63, 181, 55, 1) 100%
   );
-  margin-bottom: 10px;
+  background-size: calc(100vw) 100%;
+  background-position: left center;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 #login_mask {
@@ -248,7 +415,6 @@ aside {
   position: absolute;
   left: 12px;
   right: 12px;
-  background: white;
   border-radius: 16px;
   padding: 10px 20px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
@@ -651,22 +817,17 @@ input.input-erro {
 }
 
 .login_popup_label {
-  font-size: 12px;
   font-weight: 600;
   margin-bottom: 4px;
 }
 
 .login_popup_input {
   width: 100%;
-  border: solid 0.1px rgb(117, 117, 117);
+  border: solid 0.1px;
   border-radius: 8px;
   padding: 8px 10px;
-  background: #f0f0f0;
-  font-size: 12px;
   outline: none;
   box-sizing: border-box;
-
-  color: black;
 }
 
 .login_popup_input:focus {
@@ -681,21 +842,16 @@ input.input-erro {
   border-radius: 8px;
   padding: 10px;
   font-weight: 700;
-  font-size: 13px;
   cursor: pointer;
 }
 
 .login_popup_btn_google {
   display: flex;
   width: 100%;
-  background: white;
-  color: black;
-  border: 1px solid #ddd;
+  border: 1px solid;
   border-radius: 8px;
   padding: 8px;
-  font-size: 12px;
   cursor: pointer;
-
   justify-content: center;
   gap: 10px;
 }
@@ -736,7 +892,6 @@ input.input-erro {
   left: 0;
   width: 100%;
   height: 100%;
-  background: white;
   border-radius: 20px;
   z-index: 500;
   display: flex;
@@ -757,17 +912,13 @@ input.input-erro {
 }
 
 .menuConfigHeader h2 {
-  font-size: 15px;
-  color: black;
   font-weight: 700;
 }
 
 .menuConfigHeader button {
   background: none;
   border: none;
-  font-size: 16px;
   cursor: pointer;
-  color: #888;
 }
 
 .menuConfigUsuario {
@@ -775,14 +926,11 @@ input.input-erro {
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: #f8f8f8;
   border-radius: 10px;
 }
 
 .menuConfigUsuario p {
-  font-size: 13px;
   font-weight: 600;
-  color: black;
 }
 
 #menuLogout {
@@ -793,8 +941,6 @@ input.input-erro {
 }
 
 #menuLogout p {
-  font-size: 12px;
-  color: #888;
 }
 
 .icon-logout-menu {
@@ -816,12 +962,10 @@ input.input-erro {
   justify-content: space-between;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid;
 }
 
 .menuConfigItem p {
-  font-size: 13px;
-  color: black;
 }
 
 .alttexto {
@@ -832,7 +976,6 @@ input.input-erro {
 
 #menuLess,
 #menuPlus {
-  background: #f0f0f0;
   border: none;
   border-radius: 50%;
   width: 26px;
@@ -842,7 +985,6 @@ input.input-erro {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: black;
 }
 
 #menuBar {
@@ -850,11 +992,9 @@ input.input-erro {
   width: 80px;
   height: 4px;
   border-radius: 2px;
-  background: linear-gradient(to right, #000 var(--fill), #ccc var(--fill));
 }
 
 .retangleConfig {
-  background: #d9d9d9;
   width: 40px;
   height: 20px;
   border-radius: 20px;
@@ -867,14 +1007,12 @@ input.input-erro {
 }
 
 .retangleConfig.ativo-config {
-  background: #000;
 }
 
 .circleConfig {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: white;
   transition: transform 0.3s ease;
 }
 
@@ -883,40 +1021,97 @@ input.input-erro {
 }
 
 /* Classes de acessibilidade para o aside */
+aside {
+  --bg: #ffffff;
+  --bg-secondary: #f8f8f8;
+  --bg-mensagem-ia: #f0f0f0;
+  --bg-input: #ffffff;
+  --bg-input-login: #f0f0f0;
+  --texto: #000000;
+  --texto-secundario: #888888;
+  --borda: #000000;
+  --borda-input: #000000;
+  --borda-item: #f0f0f0;
+  --bar-color: #000;
+  --bar-empty: #ccc;
+  --toggle-bg: #d9d9d9;
+  --toggle-ativo: #000;
+  --circle-bg: white;
+  --icone-filter: none;
+}
+
 aside.alto-contraste {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
-}
-
-aside.alto-contraste .mensagemIA,
-aside.alto-contraste .mensagemIAPrimeira {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
-  border: 2px solid #ffff00 !important;
-}
-
-aside.alto-contraste #chatInput {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
-  border: 2px solid #ffff00 !important;
+  --bg: #000000;
+  --bg-secondary: #111111;
+  --bg-mensagem-ia: #111111;
+  --bg-input: #000000;
+  --bg-input-login: #111111;
+  --texto: #ffff00;
+  --texto-secundario: #ffff00;
+  --borda: #ffff00;
+  --borda-input: #ffff00;
+  --borda-item: #333333;
+  --bar-color: #ffff00;
+  --bar-empty: #444;
+  --toggle-bg: #444;
+  --toggle-ativo: #6eb5ff;
+  --circle-bg: #ffff00;
+  --icone-filter: invert(1);
 }
 
 aside.tema-escuro {
-  background-color: #1a1a1a !important;
-  color: #ffffff !important;
+  --bg: #1a1a1a;
+  --bg-secondary: #2a2a2a;
+  --bg-mensagem-ia: #2a2a2a;
+  --bg-input: #2a2a2a;
+  --bg-input-login: #2a2a2a;
+  --texto: #ffffff;
+  --texto-secundario: #a4a4a4;
+  --borda: #444444;
+  --borda-input: #444444;
+  --borda-item: #333333;
+  --bar-color: #ffffff;
+  --bar-empty: #444;
+  --toggle-bg: #444;
+  --toggle-ativo: #ffffff;
+  --circle-bg: #1a1a1a;
+  --icone-filter: invert(1);
 }
 
-aside.tema-escuro .mensagemIA,
-aside.tema-escuro .mensagemIAPrimeira {
-  background-color: #2a2a2a !important;
-  color: #ffffff !important;
-}
+aside { background-color: var(--bg); color: var(--texto); border-color: var(--borda); transition: background-color 0.3s, color 0.3s; }
 
-aside.tema-escuro #chatInput {
-  background-color: #2a2a2a !important;
-  color: #ffffff !important;
-  border-color: #444 !important;
-}
+#header #logo { filter: var(--icone-filter); }
+#header #settings { filter: var(--icone-filter); }
+
+.chatFooter { background: var(--bg); border-top-color: var(--borda-item); }
+
+#chatInput { background: var(--bg-input); color: var(--texto); border-color: var(--borda-input); }
+
+.mensagemIA { background: var(--bg-mensagem-ia); color: var(--texto); }
+
+.mensagemIAPrimeira { background: var(--bg-secondary); color: var(--texto); }
+.mensagemIAPrimeira .result { color: var(--texto); }
+.mensagemIAPrimeira #textAnalysis { color: var(--texto); }
+
+.menuConfig { background: var(--bg); }
+.menuConfigHeader h2 { color: var(--texto); }
+.menuConfigHeader button { color: var(--texto-secundario); }
+.menuConfigUsuario { background: var(--bg-secondary); }
+.menuConfigUsuario p { color: var(--texto); }
+#menuLogout p { color: var(--texto-secundario); }
+.icon-logout-menu { filter: var(--icone-filter); opacity: 0.5; }
+.menuConfigSecao h3 { color: var(--texto-secundario); }
+.menuConfigItem { border-bottom-color: var(--borda-item); }
+.menuConfigItem p { color: var(--texto); }
+#menuLess, #menuPlus { background: var(--bg-secondary); color: var(--texto); }
+#menuBar { background: linear-gradient(to right, var(--bar-color) var(--fill), var(--bar-empty) var(--fill)); }
+.retangleConfig { background: var(--toggle-bg); }
+.retangleConfig.ativo-config { background: var(--toggle-ativo); }
+.circleConfig { background: var(--circle-bg); }
+
+.login_popup_input { background: var(--bg-input-login); color: var(--texto); border-color: var(--borda-input); }
+#login_popup_interno { background: var(--bg); }
+.login_popup_btn_google { background: var(--bg-secondary); color: var(--texto); border-color: var(--borda-item); }
 /* Telas de recuperação de senha */
 .login_popup_tela {
   display: none;

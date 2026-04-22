@@ -4,19 +4,19 @@ const bcrypt = require("bcrypt");
 const cors = require("cors");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+require("dotenv").config();
 
 const app = express();
 const db = new Database("usuarios.db");
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
-// ✅ Configuração do Nodemailer (Gmail)
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "tuliobmedeiros@gmail.com", // ← COLOQUE SEU EMAIL AQUI
-    pass: "zmlu nuve iqks rjgm", // ← COLOQUE SUA SENHA DE APP AQUI
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -244,6 +244,118 @@ app.post("/redefinir-senha", async (req, res) => {
     res.status(200).json({ mensagem: "Senha redefinida com sucesso!" });
   } catch (err) {
     res.status(500).json({ erro: "Erro ao redefinir senha." });
+  }
+});
+
+const { classifyPage } = require("./services/classifyPage");
+const { extractMainContent } = require("./services/extractMainContent");
+const { extractClaims } = require("./services/extractClaims");
+const { checkClaims } = require("./services/checkClaims");
+const { rankSources } = require("./services/rankSources");
+const { buildFinalResult } = require("./services/buildFinalResult");
+const { analyzeSource } = require("./services/analyzeSource");
+const { extractVideoContent } = require("./services/extractVideoContent");
+
+const { searchRelatedNews } = require("./services/searchRelatedNews");
+
+app.post("/analisar", async (req, res) => {
+  const { text, title, url, siteName, foundLinks, imageUrl, platform, hasMultipleTopics, sourceHandle, sourceUrl, frames } = req.body;
+
+  try {
+    const classificacao = await classifyPage(text);
+    const conteudo = await extractMainContent(text);
+
+    const [claimsResult, sourceInfo] = await Promise.all([
+      extractClaims(conteudo.corpo),
+      (platform === "youtube" || platform === "instagram" || platform === "twitter" || platform === "tiktok")
+        ? analyzeSource({ sourceHandle, sourceUrl, platform, title, text: conteudo.corpo })
+        : Promise.resolve(null),
+    ]);
+
+    const [checagem, materiasMap] = await Promise.all([
+      checkClaims(claimsResult.afirmacoes),
+      searchRelatedNews(claimsResult.afirmacoes),
+    ]);
+
+    // Mescla matérias relacionadas nas sources de cada claim
+    checagem.resultados = checagem.resultados.map(r => {
+      const materias = materiasMap[r.afirmacao] || [];
+      if (materias.length === 0) return r;
+      const urlsExistentes = new Set(r.sources.map(s => s.url));
+      const novas = materias
+        .filter(m => !urlsExistentes.has(m.url))
+        .map(m => ({ title: m.veiculo || m.title, url: m.url, sourceType: "secondary", snippet: m.data ? `${m.title} — ${m.data}` : m.title }));
+      return { ...r, sources: [...r.sources, ...novas].slice(0, 4) };
+    });
+
+    // Se houver claims sem evidência e existirem frames, tenta complementar com visão
+    const semEvidencia = checagem.resultados.filter(r => r.status === "insufficient_evidence");
+    if (semEvidencia.length > 0 && Array.isArray(frames) && frames.length > 0) {
+      console.log(`[/analisar] ${semEvidencia.length} claims sem evidência — tentando complementar com frames...`);
+      const videoContext = await extractVideoContent(frames);
+      if (videoContext && videoContext !== "sem complemento visual") {
+        const afirmacoesComVideo = semEvidencia.map(r => `${r.afirmacao} [contexto visual: ${videoContext}]`);
+        const checagemVideo = await checkClaims(afirmacoesComVideo);
+        const videoMap = new Map(
+          checagemVideo.resultados.map((r, i) => [semEvidencia[i]?.afirmacao, r])
+        );
+        checagem.resultados = checagem.resultados.map(r => {
+          if (r.status !== "insufficient_evidence") return r;
+          const melhorado = videoMap.get(r.afirmacao);
+          return melhorado && melhorado.status !== "insufficient_evidence" ? { ...melhorado, afirmacao: r.afirmacao } : r;
+        });
+      }
+    }
+
+    const fontes = rankSources(checagem.resultados || []);
+    const resultado = buildFinalResult(classificacao.tipo, conteudo, checagem, fontes, sourceInfo);
+
+    // Segunda verificação: re-testa claims ainda sem conclusão
+    const claimsSemConclusao = resultado.claims.filter(c =>
+      c.verdict === "insufficient_evidence" || c.verdict === "not_checkable"
+    );
+
+    if (claimsSemConclusao.length > 0) {
+      console.log(`[/analisar] Segunda verificação: ${claimsSemConclusao.length} claims sem conclusão...`);
+      const [checagem2, materias2] = await Promise.all([
+        checkClaims(claimsSemConclusao.map(c => c.text)),
+        searchRelatedNews(claimsSemConclusao.map(c => c.text)),
+      ]);
+
+      // Mescla matérias da segunda rodada
+      checagem2.resultados = checagem2.resultados.map(r => {
+        const materias = materias2[r.afirmacao] || [];
+        if (materias.length === 0) return r;
+        const urlsExistentes = new Set(r.sources.map(s => s.url));
+        const novas = materias
+          .filter(m => !urlsExistentes.has(m.url))
+          .map(m => ({ title: m.veiculo || m.title, url: m.url, sourceType: "secondary", snippet: m.data ? `${m.title} — ${m.data}` : m.title }));
+        return { ...r, sources: [...r.sources, ...novas].slice(0, 4) };
+      });
+
+      const mapa2 = new Map(checagem2.resultados.map(r => [r.afirmacao.trim().toLowerCase(), r]));
+
+      // Substitui no checagem original apenas os que melhoraram
+      checagem.resultados = checagem.resultados.map(r => {
+        if (r.status !== "insufficient_evidence" && r.status !== "not_checkable") return r;
+        const melhorado = mapa2.get(r.afirmacao.trim().toLowerCase());
+        if (!melhorado) return r;
+        const melhorou = melhorado.status !== "insufficient_evidence" && melhorado.status !== "not_checkable";
+        return melhorou ? { ...melhorado, afirmacao: r.afirmacao } : r;
+      });
+
+      // Reconstrói resultado final com dados atualizados
+      const fontes2 = rankSources(checagem.resultados);
+      const resultado2 = buildFinalResult(classificacao.tipo, conteudo, checagem, fontes2, sourceInfo);
+      console.log(`[/analisar] Segunda verificação concluída`);
+      return res.json(resultado2);
+    }
+
+    res.json(resultado);
+  } catch (err) {
+    console.error("[/analisar] ERRO:", err.message);
+    console.error(err.stack);
+    res.status(500).json({ pageType: "error", summary: "Erro ao analisar o conteúdo.", overallVerdict: "unverifiable", confidenceLabel: "baixa", confidenceScore: 0, claims: [], links: [], warnings: [err.message] });
   }
 });
 
