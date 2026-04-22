@@ -142,6 +142,38 @@
   }
 }
 
+#btnEnviarCodigo {
+  width: 230px;
+  height: 40px;
+  border-radius: 12px;
+  border-style: none;
+  color: var(--text-button);
+  background: var(--btn-primary-bg);
+  cursor: pointer;
+  transition: background 0.3s ease;
+
+  p {
+    font-size: 15px;
+  }
+}
+
+#voltarLogin {
+  color: var(--link-color);
+  font-style: none;
+}
+#voltarLogin :hover {
+  color: var(--link-hover);
+  font-style: none;
+}
+
+.logup {
+  a {
+    text-decoration: none;
+    color: var(--link-hover);
+    font-weight: 600;
+  }
+}
+
 .googleButton {
   padding-bottom: 5px;
 

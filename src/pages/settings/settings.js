@@ -137,25 +137,43 @@ async function carregarConfigs() {
       return;
     }
 
-    const { fontSize, toggles } = dados.configs;
-
-    if (fontSize !== undefined) {
-      value = fontSize;
-      updateBar();
-    }
-
-    if (toggles) {
-      document.querySelectorAll(".retangle").forEach((btn) => {
-        if (toggles[btn.dataset.id]) {
-          btn.classList.add("ativo");
-          if (btn.dataset.id === "contraste") ativarAltoContraste(true);
-          if (btn.dataset.id === "tema") ativarTemaEscuro(true);
-          if (btn.dataset.id === "leitornoticias") ativarLeitorConfig();
-        }
-      });
-    }
+    aplicarConfigs(dados.configs);
   } catch (err) {
     console.error("Erro ao carregar configs:", err);
     updateBar();
   }
 }
+
+function aplicarConfigs({ fontSize, toggles }) {
+  if (fontSize !== undefined) {
+    value = fontSize;
+    updateBar();
+  }
+
+  if (toggles) {
+    document.querySelectorAll(".retangle").forEach((btn) => {
+      const ativo = !!toggles[btn.dataset.id];
+      btn.classList.toggle("ativo", ativo);
+      if (btn.dataset.id === "contraste") ativarAltoContraste(ativo);
+      if (btn.dataset.id === "tema") ativarTemaEscuro(ativo);
+      if (btn.dataset.id === "leitornoticias") {
+        document.removeEventListener("mouseup", lerTextoConfig);
+        if (ativo) ativarLeitorConfig();
+        else speechSynthesis.cancel();
+      }
+    });
+  }
+}
+
+// Sincroniza quando o sidebar alterar as configs
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === "CONFIGS_UPDATED") {
+    aplicarConfigs(message.configs);
+  }
+});
+
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.configs?.newValue) {
+    aplicarConfigs(changes.configs.newValue);
+  }
+});
