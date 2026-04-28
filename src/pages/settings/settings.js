@@ -16,7 +16,7 @@ document
   .addEventListener("click", () => window.close());
 
 document.getElementById("logout").addEventListener("click", () => {
-  chrome.storage.local.remove(["logado", "email"], () => {
+  chrome.storage.local.remove(["logado", "email", "configs"], () => {
     window.location.href = "../login/login.html";
   });
 });

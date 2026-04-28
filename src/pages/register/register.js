@@ -1,16 +1,56 @@
 import { Icons } from "../../shared/icons.js";
 
-["PasswordConfirmRegister"].forEach((id) => {
-  document.getElementById(id).addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      botao.click();
-    }
-  });
+document.getElementById("userName").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("E-mailRegister").focus();
+});
+document.getElementById("E-mailRegister").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("PasswordRegister").focus();
+});
+document.getElementById("PasswordRegister").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("PasswordConfirmRegister").focus();
+});
+document.getElementById("PasswordConfirmRegister").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") botao.click();
 });
 
 document.getElementById("checkIcon").innerHTML = Icons("check");
 
 const botao = document.getElementById("confirmRegister");
+
+const senhaInputForca = document.getElementById("PasswordRegister");
+senhaInputForca.addEventListener("input", () => {
+  const senha = senhaInputForca.value;
+  const barras = document.querySelectorAll("#senha-forca .senha-forca-barra");
+  const texto = document.getElementById("senha-forca-texto");
+
+  barras.forEach((b) => b.classList.remove("ativa-fraca", "ativa-media", "ativa-forte"));
+
+  if (!senha) { texto.textContent = ""; return; }
+
+  let forca = 0;
+  if (senha.length >= 6) forca++;
+  if (senha.length >= 10) forca++;
+  if (/[a-z]/.test(senha) && /[A-Z]/.test(senha)) forca++;
+  if (/\d/.test(senha)) forca++;
+  if (/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(senha)) forca++;
+
+  if (forca <= 2) {
+    barras[0].classList.add("ativa-fraca");
+    texto.textContent = "Fraca";
+    texto.style.color = "#dc3545";
+  } else if (forca <= 3) {
+    barras[0].classList.add("ativa-media");
+    barras[1].classList.add("ativa-media");
+    texto.textContent = "Média";
+    texto.style.color = "#ffc107";
+  } else {
+    barras[0].classList.add("ativa-forte");
+    barras[1].classList.add("ativa-forte");
+    barras[2].classList.add("ativa-forte");
+    texto.textContent = "Forte";
+    texto.style.color = "#28a745";
+  }
+});
 
 function emailValido(email) {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,57 +74,29 @@ botao.addEventListener("click", async () => {
   const temEspecial = /[!@#$%&*()_+\-=?/]/.test(senha);
 
   if (!email) {
-    mostrarErro(
-      emailInput,
-      "erroEmail",
-      `${Icons("warning")}Preencha o e-mail.`,
-    );
+    mostrarErro(emailInput, "erroEmail", "Preencha o e-mail.");
     temErro = true;
   } else if (!emailValido(email)) {
-    mostrarErro(
-      emailInput,
-      "erroEmail",
-      `${Icons("warning")}Digite um e-mail válido.`,
-    );
+    mostrarErro(emailInput, "erroEmail", "Digite um e-mail válido.");
     temErro = true;
   }
 
   if (!senha) {
-    mostrarErro(
-      senhaInput,
-      "erroSenha",
-      `${Icons("warning")}Preencha a senha.`,
-    );
+    mostrarErro(senhaInput, "erroSenha", "Preencha a senha.");
     temErro = true;
   } else if (senha.length < 6) {
-    mostrarErro(
-      senhaInput,
-      "erroSenha",
-      `${Icons("warning")}A senha deve ter 6 caracteres e pelo menos um especial`,
-    );
+    mostrarErro(senhaInput, "erroSenha", "A senha deve ter 6 caracteres e pelo menos um especial");
     temErro = true;
   } else if (!temEspecial) {
-    mostrarErro(
-      senhaInput,
-      "erroSenha",
-      `${Icons("warning")}A senha deve conter pelo menos um caractere especial.`,
-    );
+    mostrarErro(senhaInput, "erroSenha", "A senha deve conter pelo menos um caractere especial.");
     temErro = true;
   }
 
   if (!senhaConfirm) {
-    mostrarErro(
-      senhaConfirmInput,
-      "erroSenhaConfirm",
-      `${Icons("warning")}Confirme sua senha.`,
-    );
+    mostrarErro(senhaConfirmInput, "erroSenhaConfirm", "Confirme sua senha.");
     temErro = true;
   } else if (senha !== senhaConfirm) {
-    mostrarErro(
-      senhaConfirmInput,
-      "erroSenhaConfirm",
-      `${Icons("warning")}As senhas não coincidem.`,
-    );
+    mostrarErro(senhaConfirmInput, "erroSenhaConfirm", "As senhas não coincidem.");
     temErro = true;
   }
 
@@ -102,14 +114,10 @@ botao.addEventListener("click", async () => {
     if (resposta.ok) {
       mostrarSucesso();
     } else {
-      mostrarErro(emailInput, "erroEmail", `${Icons("warning")} ${dados.erro}`);
+      mostrarErro(emailInput, "erroEmail", dados.erro);
     }
   } catch (err) {
-    mostrarErro(
-      emailInput,
-      "erroEmail",
-      `${Icons("warning")} Erro ao conectar com o servidor.`,
-    );
+    mostrarErro(emailInput, "erroEmail", "Erro ao conectar com o servidor.");
   }
 });
 
@@ -132,7 +140,7 @@ function mostrarSucesso() {
 
 function mostrarErro(input, idSpan, mensagem) {
   input.classList.add("input-erro");
-  document.getElementById(idSpan).innerHTML = mensagem;
+  document.getElementById(idSpan).textContent = mensagem;
 }
 
 function limparErros() {

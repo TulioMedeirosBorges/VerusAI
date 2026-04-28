@@ -1,267 +1,271 @@
 * {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 :root {
-  /* Fundo */
-  --bg-primary: #ffffff;
-  --bg-input: #d9d9d9;
-
-  /* Texto */
-  --text-primary: #000000;
-  --text-secondary: #888888;
-  --text-button: #ffffff;
-  --text-error: red;
-
-  /* Botões */
-  --btn-primary-bg: #000000;
-  --btn-primary-hover: #4b4b4b;
-  --btn-google-border: #d0d0d0;
-  --btn-google-hover-bg: #000000;
-  --btn-google-hover-text: #ffffff;
-
-  /* Bordas */
-  --border-input-error: red;
-
-  /* Links */
+  --bg: #ffffff;
+  --bg-input: #f0f0f0;
+  --bg-secondary: #f8f8f8;
+  --texto: #000000;
+  --texto-secundario: #888888;
+  --borda: #dddddd;
+  --borda-input: rgb(117, 117, 117);
   --link-color: #888888;
   --link-hover: #f1ae2b;
-
-  /* Força da senha */
-  --senha-fraca: #dc3545;
-  --senha-media: #ffc107;
-  --senha-forte: #28a745;
-  --senha-barra-vazia: #dddddd;
+  --btn-bg: #000000;
+  --btn-hover: #333333;
+  --erro: #dc3545;
 }
 
-/* ===== TEMA ESCURO ===== */
-:root.tema-escuro {
-  --bg-primary: #1a1a1a;
-  --bg-input: #2e2e2e;
-
-  --text-primary: #ffffff;
-  --text-secondary: #aaaaaa;
-  --text-button: #ffffff;
-  --text-error: #ff6b6b;
-
-  --btn-primary-bg: #f1ae2b;
-  --btn-primary-hover: #e09d1a;
-  --btn-google-border: #444444;
-  --btn-google-hover-bg: #f1ae2b;
-  --btn-google-hover-text: #000000;
-
-  --border-input-error: #ff6b6b;
-
-  --link-color: #aaaaaa;
-  --link-hover: #f1ae2b;
-
-  --senha-barra-vazia: #444444;
-}
-
-#bodyExtension {
-  border-style: solid;
-  font-family: Arial, Helvetica, sans-serif;
-  padding: 15px 30px;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+html,
+body {
+  background-color: var(--bg);
+  color: var(--texto);
+  min-width: 70vh;
   transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+    background-color 0.3s,
+    color 0.3s;
+}
+
+/* ── Header ── */
+#headerPage {
+  padding: 16px 20px 0;
 }
 
 .header {
   display: flex;
-  gap: 30px;
   justify-content: space-between;
-  justify-self: space;
   align-items: center;
-
-  #logo {
-    width: 90px;
-    height: 50px;
-  }
-  #closeIcon {
-    width: 20px;
-    height: 20px;
-  }
-  #closeIcon:hover {
-    cursor: pointer;
-  }
 }
 
-.input {
-  justify-self: center;
-  font-size: medium;
-  padding-top: 10px;
-
-  label {
-    color: var(--text-primary);
-  }
-
-  input {
-    border-radius: 10px;
-    border-style: none;
-    background-color: var(--bg-input);
-    color: var(--text-primary);
-    height: 40px;
-    width: 225px;
-    padding-left: 5px;
-    margin: 5px 0px 10px 0px;
-    font-size: small;
-    transition: background-color 0.3s ease;
-  }
-}
-
-.button {
-  justify-self: center;
-  text-align: center;
-  padding-top: 10px;
-
-  .buttonConfirm {
-    padding-bottom: 7px;
-
-    #confirm {
-      width: 230px;
-      height: 40px;
-      border-radius: 12px;
-      border-style: none;
-      color: var(--text-button);
-      background: var(--btn-primary-bg);
-      cursor: pointer;
-      transition: background 0.3s ease;
-
-      p {
-        font-size: 15px;
-      }
-    }
-    #confirm:hover {
-      background: var(--btn-primary-hover);
-      cursor: pointer;
-    }
-  }
-}
-
-#btnEnviarCodigo {
-  width: 230px;
+#logo {
+  width: 120px;
   height: 40px;
-  border-radius: 12px;
-  border-style: none;
-  color: var(--text-button);
-  background: var(--btn-primary-bg);
+  object-fit: contain;
+}
+
+#closeIcon {
   cursor: pointer;
-  transition: background 0.3s ease;
-
-  p {
-    font-size: 15px;
-  }
+  opacity: 0.5;
 }
 
-#voltarLogin {
-  color: var(--link-color);
-  font-style: none;
-}
-#voltarLogin :hover {
-  color: var(--link-hover);
-  font-style: none;
-}
-
-.logup {
-  a {
-    text-decoration: none;
-    color: var(--link-hover);
-    font-weight: 600;
-  }
-}
-
-.googleButton {
-  padding-bottom: 5px;
-
-  .google {
-    align-items: center;
-    justify-content: center;
-    display: flex;
-    padding: 6px 37px;
-    gap: 10px;
-    border-radius: 12px;
-    border: solid var(--btn-google-border) 0.5px;
-    background: none;
-    color: var(--text-primary);
-    transition:
-      background 0.3s ease,
-      color 0.3s ease;
-
-    #googleIcon {
-      width: 15px;
-      height: 15px;
-    }
-    p {
-      width: 128px;
-    }
-  }
-}
-
-.google:hover {
-  background: var(--btn-google-hover-bg);
-  color: var(--btn-google-hover-text);
-  border: none;
-  border-radius: 12px;
-  padding: 7px 37px;
-  cursor: pointer;
-}
-
-.erro {
-  color: var(--text-error);
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  max-width: 230px;
-}
-
-.icon-warning {
+#closeIcon img {
   width: 16px;
   height: 16px;
-  vertical-align: middle;
-  padding-right: 5px;
-  padding-bottom: 2px;
+}
+
+/* ── Container principal ── */
+main {
+  display: flex;
+  justify-content: center;
+  padding: 16px 20px 20px;
+}
+
+.main {
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Logo centralizada ── */
+.login_popup_logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.login_popup_logo img {
+  width: 140px;
+  height: 40px;
+  object-fit: contain;
+}
+
+/* ── Inputs ── */
+.input {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.E-mail,
+.Senha {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  width: 100%;
+  border: solid 0.1px var(--borda-input);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  font-size: 13px;
+  outline: none;
+  color: var(--texto);
+  transition: border-color 0.2s;
+}
+
+input:focus {
+  border-color: var(--texto);
 }
 
 input.input-erro {
-  border: 1px solid var(--border-input-error) !important;
+  border: 1px solid var(--erro) !important;
 }
 
+/* ── Erros ── */
+.erro {
+  color: var(--erro);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 14px;
+}
+
+.icon-warning {
+  width: 12px;
+  height: 12px;
+}
+
+/* ── Esqueci a senha ── */
+.esqueci_senha {
+  text-align: right;
+}
+
+.esqueci_senha a,
+#linkEsqueciSenha {
+  font-size: 12px;
+  color: var(--link-color);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.esqueci_senha a:hover,
+#linkEsqueciSenha:hover {
+  color: var(--link-hover);
+}
+
+/* ── Botões ── */
+.button {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.buttonConfirm #confirm,
+#btnEnviarCodigo,
+#btnRedefinirSenha,
+#btnVoltarLogin {
+  width: 100%;
+  background: var(--btn-bg);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.buttonConfirm #confirm:hover,
+#btnEnviarCodigo:hover,
+#btnRedefinirSenha:hover,
+#btnVoltarLogin:hover {
+  background: var(--btn-hover);
+}
+
+/* ── Google ── */
+.googleButton {
+  width: 100%;
+}
+
+.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--borda);
+  background: var(--bg-secondary);
+  color: var(--texto);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.google:hover {
+  background: var(--bg-input);
+}
+
+#googleIcon img {
+  width: 15px;
+  height: 15px;
+}
+
+/* ── Links de cadastro ── */
+.logup p,
+.logup a {
+  font-size: 12px;
+  color: var(--texto-secundario);
+  text-align: center;
+}
+
+.logup a {
+  color: var(--link-hover);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ── Recuperação de senha ── */
 .recuperacao {
-  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .recuperacao h2 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  color: var(--texto);
 }
 
 .subtitulo {
   font-size: 12px;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
+  color: var(--texto-secundario);
 }
 
-.esqueci_senha {
-  text-align: right;
-  padding: 0 2px 4px;
-}
-
-.esqueci_senha a {
-  font-size: 12px;
+#voltarLogin,
+#voltarLogin2 {
+  font-size: 11px;
   color: var(--link-color);
   text-decoration: none;
+  cursor: pointer;
 }
 
-.esqueci_senha a:hover {
-  color: var(--link-hover);
+#voltarLogin:hover,
+#voltarLogin2:hover {
+  color: var(--texto);
 }
 
+/* ── Força da senha ── */
 .senha-forca {
   display: flex;
   gap: 4px;
@@ -272,22 +276,23 @@ input.input-erro {
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: var(--senha-barra-vazia);
-  transition: background 0.3s ease;
+  background: #e0e0e0;
+  transition: background 0.3s;
 }
 
 .senha-forca-barra.ativa-fraca {
-  background: var(--senha-fraca);
+  background: #dc3545;
 }
 .senha-forca-barra.ativa-media {
-  background: var(--senha-media);
+  background: #ffc107;
 }
 .senha-forca-barra.ativa-forte {
-  background: var(--senha-forte);
+  background: #28a745;
 }
 
 .senha-forca-texto {
   font-size: 11px;
   margin-top: 3px;
-  color: var(--text-secondary);
+  color: var(--texto-secundario);
+  text-align: right;
 }

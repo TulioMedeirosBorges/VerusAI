@@ -1,9 +1,10 @@
 import { Icons } from "../../shared/icons.js";
 
-["Password"].forEach((id) => {
-  document.getElementById(id).addEventListener("keydown", (e) => {
-    if (e.key === "Enter") botao.click();
-  });
+document.getElementById("E-mail").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("Password").focus();
+});
+document.getElementById("Password").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") botao.click();
 });
 
 document.getElementById("closeIcon").innerHTML = Icons("close");
@@ -40,27 +41,15 @@ botao.addEventListener("click", async () => {
   let temErro = false;
 
   if (!email) {
-    mostrarErro(
-      emailInput,
-      "erroEmail",
-      `${Icons("warning")} Preencha o e-mail.`,
-    );
+    mostrarErro(emailInput, "erroEmail", "Preencha o e-mail.");
     temErro = true;
   } else if (!emailValido(email)) {
-    mostrarErro(
-      emailInput,
-      "erroEmail",
-      `${Icons("warning")} Digite um e-mail válido.`,
-    );
+    mostrarErro(emailInput, "erroEmail", "Digite um e-mail válido.");
     temErro = true;
   }
 
   if (!senha) {
-    mostrarErro(
-      senhaInput,
-      "erroSenha",
-      `${Icons("warning")} Preencha a senha.`,
-    );
+    mostrarErro(senhaInput, "erroSenha", "Preencha a senha.");
     temErro = true;
   }
 
@@ -84,31 +73,19 @@ botao.addEventListener("click", async () => {
       );
     } else {
       if (dados.campo === "senha") {
-        mostrarErro(
-          senhaInput,
-          "erroSenha",
-          `${Icons("warning")} ${dados.erro}`,
-        );
+        mostrarErro(senhaInput, "erroSenha", dados.erro);
       } else {
-        mostrarErro(
-          emailInput,
-          "erroEmail",
-          `${Icons("warning")} ${dados.erro}`,
-        );
+        mostrarErro(emailInput, "erroEmail", dados.erro);
       }
     }
   } catch (err) {
-    mostrarErro(
-      emailInput,
-      "erroEmail",
-      `${Icons("warning")} Erro ao conectar com o servidor.`,
-    );
+    mostrarErro(emailInput, "erroEmail", "Erro ao conectar com o servidor.");
   }
 });
 
 function mostrarErro(input, idSpan, mensagem) {
   input.classList.add("input-erro");
-  document.getElementById(idSpan).innerHTML = mensagem;
+  document.getElementById(idSpan).textContent = mensagem;
 }
 
 function limparErros() {
@@ -185,6 +162,10 @@ function mostrarTelaRecuperacao() {
     location.reload();
   });
 
+  document.getElementById("emailRecuperacao").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("btnEnviarCodigo").click();
+  });
+
   document
     .getElementById("btnEnviarCodigo")
     .addEventListener("click", async () => {
@@ -193,7 +174,7 @@ function mostrarTelaRecuperacao() {
       erroSpan.innerHTML = "";
 
       if (!email) {
-        erroSpan.innerHTML = `${Icons("warning")} Preencha o e-mail.`;
+        erroSpan.textContent = "Preencha o e-mail.";
         return;
       }
 
@@ -213,12 +194,12 @@ function mostrarTelaRecuperacao() {
         if (resposta.ok) {
           mostrarTelaCodigoESenha(email);
         } else {
-          erroSpan.innerHTML = `${Icons("warning")} ${dados.erro}`;
+          erroSpan.textContent = dados.erro;
           btn.disabled = false;
           btn.querySelector("p").textContent = "Enviar código";
         }
       } catch (err) {
-        erroSpan.innerHTML = `${Icons("warning")} Erro ao conectar com o servidor.`;
+        erroSpan.textContent = "Erro ao conectar com o servidor.";
         btn.disabled = false;
         btn.querySelector("p").textContent = "Enviar código";
       }
@@ -228,19 +209,19 @@ function mostrarTelaRecuperacao() {
 function mostrarTelaCodigoESenha(email) {
   const main = document.querySelector(".main");
   main.innerHTML = `
-    <div class="recuperacao">
+    <div class="recuperacao" style="gap:4px">
       <h2>Redefinir senha</h2>
       <p class="subtitulo">Código enviado para <strong>${email}</strong></p>
-      <div class="input">
+      <div class="input" style="gap:4px">
         <div class="E-mail">
-          <label>Código de 6 dígitos</label><br/>
-          <input type="text" id="codigoRecuperacao" placeholder="000000" maxlength="6" style="letter-spacing: 4px; text-align: center; font-size: 18px;" />
+          <label>Código</label>
+          <input type="text" id="codigoRecuperacao" placeholder="000000" maxlength="6" style="letter-spacing:2px;text-align:center;font-size:14px;padding:6px 10px" />
           <span class="erro" id="erroCodigo"></span>
         </div>
-        <div class="Senha" style="margin-top: 8px">
-          <label>Nova senha</label><br/>
-          <input type="password" id="novaSenha" placeholder="Digite sua nova senha" />
-          <div class="senha-forca" id="senha_forca">
+        <div class="Senha">
+          <label>Nova senha</label>
+          <input type="password" id="novaSenha" placeholder="Digite sua nova senha" style="padding:6px 10px" />
+          <div class="senha-forca" id="senha_forca" style="margin-top:3px">
             <div class="senha-forca-barra"></div>
             <div class="senha-forca-barra"></div>
             <div class="senha-forca-barra"></div>
@@ -248,25 +229,33 @@ function mostrarTelaCodigoESenha(email) {
           <p class="senha-forca-texto" id="senha_forca_texto"></p>
           <span class="erro" id="erroNovaSenha"></span>
         </div>
-        <div class="Senha" style="margin-top: 8px">
-          <label>Confirme a nova senha</label><br/>
-          <input type="password" id="confirmarNovaSenha" placeholder="Confirme sua nova senha" />
+        <div class="Senha">
+          <label>Confirme a nova senha</label>
+          <input type="password" id="confirmarNovaSenha" placeholder="Confirme sua nova senha" style="padding:6px 10px" />
           <span class="erro" id="erroConfirmarSenha"></span>
         </div>
       </div>
-      <div class="button">
+      <div class="button" style="margin-top:2px">
         <div class="buttonConfirm">
           <button id="btnRedefinirSenha"><p>Redefinir senha</p></button>
         </div>
       </div>
-      <div class="logup" style="padding-top: 8px; text-align: center;">
-        <p>Não recebeu? <a id="reenviarCodigo" href="#">Reenviar código</a></p>
-      </div>
-      <div class="logup" style="padding-top: 4px">
-        <p><a id="voltarLogin2" href="#">← Voltar ao login</a></p>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <a id="voltarLogin2" href="#" style="font-size:11px;color:#888;text-decoration:none">← Voltar</a>
+        <a id="reenviarCodigo" href="#" style="font-size:11px;color:#f1ae2b;text-decoration:none">Reenviar código</a>
       </div>
     </div>
   `;
+
+  document.getElementById("codigoRecuperacao").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("novaSenha").focus();
+  });
+  document.getElementById("novaSenha").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("confirmarNovaSenha").focus();
+  });
+  document.getElementById("confirmarNovaSenha").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("btnRedefinirSenha").click();
+  });
 
   document.getElementById("novaSenha").addEventListener("input", () => {
     const senha = document.getElementById("novaSenha").value;
@@ -343,44 +332,35 @@ function mostrarTelaCodigoESenha(email) {
       let temErro = false;
 
       if (!codigo || codigo.length !== 6) {
-        document.getElementById("erroCodigo").innerHTML =
-          `${Icons("warning")} Digite o código de 6 dígitos.`;
+        document.getElementById("erroCodigo").textContent = "Digite o código de 6 dígitos.";
         temErro = true;
       }
 
       if (!novaSenha) {
-        document.getElementById("erroNovaSenha").innerHTML =
-          `${Icons("warning")} Preencha a senha.`;
+        document.getElementById("erroNovaSenha").textContent = "Preencha a senha.";
         temErro = true;
       } else if (novaSenha.length < 6) {
-        document.getElementById("erroNovaSenha").innerHTML =
-          `${Icons("warning")} A senha deve ter no mínimo 6 caracteres.`;
+        document.getElementById("erroNovaSenha").textContent = "A senha deve ter no mínimo 6 caracteres.";
         temErro = true;
       } else if (!/[A-Z]/.test(novaSenha)) {
-        document.getElementById("erroNovaSenha").innerHTML =
-          `${Icons("warning")} A senha deve conter pelo menos uma letra maiúscula.`;
+        document.getElementById("erroNovaSenha").textContent = "A senha deve conter pelo menos uma letra maiúscula.";
         temErro = true;
       } else if (!/[a-z]/.test(novaSenha)) {
-        document.getElementById("erroNovaSenha").innerHTML =
-          `${Icons("warning")} A senha deve conter pelo menos uma letra minúscula.`;
+        document.getElementById("erroNovaSenha").textContent = "A senha deve conter pelo menos uma letra minúscula.";
         temErro = true;
       } else if (!/\d/.test(novaSenha)) {
-        document.getElementById("erroNovaSenha").innerHTML =
-          `${Icons("warning")} A senha deve conter pelo menos um número.`;
+        document.getElementById("erroNovaSenha").textContent = "A senha deve conter pelo menos um número.";
         temErro = true;
       } else if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(novaSenha)) {
-        document.getElementById("erroNovaSenha").innerHTML =
-          `${Icons("warning")} A senha deve conter pelo menos um caractere especial.`;
+        document.getElementById("erroNovaSenha").textContent = "A senha deve conter pelo menos um caractere especial.";
         temErro = true;
       }
 
       if (!confirmarSenha) {
-        document.getElementById("erroConfirmarSenha").innerHTML =
-          `${Icons("warning")} Confirme sua senha.`;
+        document.getElementById("erroConfirmarSenha").textContent = "Confirme sua senha.";
         temErro = true;
       } else if (novaSenha !== confirmarSenha) {
-        document.getElementById("erroConfirmarSenha").innerHTML =
-          `${Icons("warning")} As senhas não coincidem.`;
+        document.getElementById("erroConfirmarSenha").textContent = "As senhas não coincidem.";
         temErro = true;
       }
 
@@ -402,14 +382,12 @@ function mostrarTelaCodigoESenha(email) {
         if (resposta.ok) {
           mostrarSucessoRedefinicao();
         } else {
-          document.getElementById("erroCodigo").innerHTML =
-            `${Icons("warning")} ${dados.erro}`;
+          document.getElementById("erroCodigo").textContent = dados.erro;
           btn.disabled = false;
           btn.querySelector("p").textContent = "Redefinir senha";
         }
       } catch (err) {
-        document.getElementById("erroCodigo").innerHTML =
-          `${Icons("warning")} Erro ao conectar com o servidor.`;
+        document.getElementById("erroCodigo").textContent = "Erro ao conectar com o servidor.";
         btn.disabled = false;
         btn.querySelector("p").textContent = "Redefinir senha";
       }

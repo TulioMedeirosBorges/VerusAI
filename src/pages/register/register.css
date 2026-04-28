@@ -1,113 +1,163 @@
 * {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-#bodyExtensionRegister {
-  border-style: solid;
+:root {
+  --bg: #ffffff;
+  --bg-input: #f0f0f0;
+  --bg-secondary: #f8f8f8;
+  --texto: #000000;
+  --texto-secundario: #888888;
+  --borda: #dddddd;
+  --borda-input: rgb(117, 117, 117);
+  --link-hover: #f1ae2b;
+  --btn-bg: #000000;
+  --btn-hover: #333333;
+  --erro: #dc3545;
+}
 
-  font-family: Arial, Helvetica, sans-serif;
+html,
+body {
+  background-color: var(--bg);
+  color: var(--texto);
+  min-width: 75vh;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+}
 
-  padding: 15px 30px;
+/* ── Header ── */
+#headerPageRegister {
+  padding: 16px 20px 0;
 }
 
 .headerRegister {
   display: flex;
-  align-items: center;
   justify-content: center;
-
-  #logoRegister {
-    width: 200px;
-    height: 80px;
-  }
-  #closeIcon {
-    width: 50px;
-    height: 50px;
-  }
-  #closeIcon:hover {
-    cursor: pointer;
-  }
+  align-items: center;
 }
 
+#logoRegister {
+  width: 120px;
+  height: 40px;
+  object-fit: contain;
+}
+
+/* ── Container principal ── */
+main {
+  display: flex;
+  justify-content: center;
+  padding: 16px 20px 20px;
+}
+
+.mainRegister {
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Inputs ── */
 .inputRegister {
-  justify-self: center;
-  font-size: medium;
-  padding-top: 10px;
-
-  input {
-    border-radius: 10px;
-    border-style: none;
-
-    background-color: #d9d9d9;
-
-    height: 40px;
-    width: 225px;
-
-    padding-left: 5px;
-    margin: 5px 0px 10px 0px;
-
-    font-size: small;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.buttonRegister {
-  justify-self: center;
-  text-align: center;
-  padding-top: 10px;
-  .buttonConfirmRegister {
-    padding-bottom: 7px;
-    #confirmRegister {
-      width: 230px;
-      height: 40px;
-
-      border-radius: 12px;
-      border-style: none;
-
-      color: white;
-
-      background: #000000;
-      cursor: pointer;
-      p {
-        font-size: 15px;
-      }
-    }
-    #confirm:hover {
-      background: #4b4b4b;
-
-      cursor: pointer;
-    }
-  }
+.nameUser,
+.E-mailRegister,
+.SenhaRegister,
+.SenhaConfirmRegister {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.erro {
-  color: red;
+label {
   font-size: 12px;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  border: solid 0.1px var(--borda-input);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  font-size: 13px;
+  outline: none;
+  color: var(--texto);
+  transition: border-color 0.2s;
+}
+
+input:focus {
+  border-color: var(--texto);
+}
+
+input.input-erro {
+  border: 1px solid var(--erro) !important;
+}
+
+/* ── Erros ── */
+.erro {
+  color: var(--erro);
+  font-size: 11px;
   display: flex;
   align-items: center;
-  max-width: 230px;
+  gap: 4px;
+  min-height: 14px;
 }
+
 .icon-warning {
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-  padding-right: 5px;
-  padding-bottom: 2px;
-}
-/* Borda vermelha no campo com erro */
-input.input-erro {
-  border: 1px solid red;
+  width: 12px;
+  height: 12px;
 }
 
-.barra-loading {
-  width: 0%;
-  height: 4px;
-  background-color: #4caf50;
-  transition: width 2s ease;
-  border-radius: 2px;
-  margin-top: 8px;
+/* ── Botões ── */
+.buttonRegister {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Tela de sucesso */
+#confirmRegister {
+  width: 100%;
+  background: var(--btn-bg);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#confirmRegister:hover {
+  background: var(--btn-hover);
+}
+
+/* ── Link login ── */
+.login p {
+  font-size: 12px;
+  color: var(--texto-secundario);
+  text-align: center;
+}
+
+.login a {
+  color: var(--link-hover);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ── Tela de sucesso ── */
 .tela-sucesso {
   display: none;
   position: fixed;
@@ -127,7 +177,7 @@ input.input-erro {
 
 .sucesso-conteudo {
   background-color: #000000;
-  padding: 30px 47px;
+  padding: 30px 40px;
   border-radius: 12px;
   text-align: center;
   display: flex;
@@ -138,5 +188,47 @@ input.input-erro {
 
 .sucesso-conteudo p {
   color: white;
-  font-size: 16px;
+  font-size: 15px;
+}
+
+/* ── Força da senha ── */
+.senha-forca {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.senha-forca-barra {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #e0e0e0;
+  transition: background 0.3s;
+}
+
+.senha-forca-barra.ativa-fraca {
+  background: #dc3545;
+}
+.senha-forca-barra.ativa-media {
+  background: #ffc107;
+}
+.senha-forca-barra.ativa-forte {
+  background: #28a745;
+}
+
+.senha-forca-texto {
+  font-size: 11px;
+  margin-top: 3px;
+  color: var(--texto-secundario);
+  text-align: right;
+  min-height: 14px;
+}
+
+.barra-loading {
+  width: 0%;
+  height: 4px;
+  background-color: #4caf50;
+  transition: width 2s ease;
+  border-radius: 2px;
+  margin-top: 8px;
 }

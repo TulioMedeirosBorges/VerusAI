@@ -69,7 +69,7 @@ body * {
 #logo {
   width: 90px;
   height: 50px;
-  filter: var(--icone-filter);
+  filter: none;
 }
 
 #closeIcon {

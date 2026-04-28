@@ -29,8 +29,17 @@
     {
       "matches": ["<all_urls>"],
       "js": [
+        "src/content/services/storage.js",
+        "src/content/services/api.js",
+        "src/content/state.js",
+        "src/content/features/reader.js",
+        "src/content/features/configs.js",
+        "src/content/features/analysis.js",
         "src/content/captureFrames.js",
         "src/content/analyzeWithOpenAI.js",
+        "src/content/ui/popup-login.js",
+        "src/content/ui/sidebar.js",
+        "src/content/ui/button.js",
         "src/content/content.js"
       ],
       "run_at": "document_idle"

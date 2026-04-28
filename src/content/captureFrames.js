@@ -1,6 +1,6 @@
-const MAX_DIMENSION = 480;
-const MAX_FRAMES = 20;
-const MAX_TOTAL_KB = 3000; // 3MB total de frames
+var MAX_DIMENSION = 480;
+var MAX_FRAMES = 20;
+var MAX_TOTAL_KB = 3000;
 
 async function captureFrames(video) {
   const frames = [];
@@ -15,7 +15,6 @@ async function captureFrames(video) {
   canvas.height = height;
   const ctx = canvas.getContext("2d");
 
-  // 1 frame por segundo, máximo MAX_FRAMES
   const totalFrames = Math.min(Math.floor(duration), MAX_FRAMES);
   const step = duration / (totalFrames + 1);
   const timestamps = Array.from({ length: totalFrames }, (_, i) => step * (i + 1));
@@ -29,7 +28,6 @@ async function captureFrames(video) {
         ctx.drawImage(video, 0, 0, width, height);
         const base64 = canvas.toDataURL("image/jpeg", 0.55);
         const sizeKB = Math.round((base64.length * 3) / 4 / 1024);
-
         if (totalKB + sizeKB <= MAX_TOTAL_KB) {
           frames.push(base64);
           totalKB += sizeKB;
