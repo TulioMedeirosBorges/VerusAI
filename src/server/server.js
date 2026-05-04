@@ -2,8 +2,8 @@ const express = require("express");
 const Database = require("better-sqlite3");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
-const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
@@ -14,35 +14,43 @@ app.use(express.json({ limit: "10mb" }));
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
 });
 
-// Tabela de usuários
-db.exec(`
-  CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
-    senha TEXT NOT NULL,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+db.exec(`CREATE TABLE IF NOT EXISTS usuarios (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT UNIQUE NOT NULL,
+  senha TEXT NOT NULL,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
 
-// Tabela de tokens de recuperação
-db.exec(`
-  CREATE TABLE IF NOT EXISTS tokens_recuperacao (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL,
-    token TEXT UNIQUE NOT NULL,
-    expira_em DATETIME NOT NULL,
-    usado INTEGER DEFAULT 0,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+db.exec(`CREATE TABLE IF NOT EXISTS tokens_recuperacao (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  token TEXT UNIQUE NOT NULL,
+  expira_em DATETIME NOT NULL,
+  usado INTEGER DEFAULT 0,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
 
-// Adiciona coluna configs se não existir
+db.exec(`CREATE TABLE IF NOT EXISTS cache_analises (
+  url TEXT PRIMARY KEY,
+  titulo TEXT,
+  veredicto TEXT,
+  score INTEGER,
+  resultado TEXT NOT NULL,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
+
+try {
+  db.exec("ALTER TABLE cache_analises ADD COLUMN titulo TEXT");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE cache_analises ADD COLUMN veredicto TEXT");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE cache_analises ADD COLUMN score INTEGER");
+} catch (e) {}
 try {
   db.exec("ALTER TABLE usuarios ADD COLUMN configs TEXT DEFAULT '{}'");
 } catch (e) {}
@@ -50,13 +58,12 @@ try {
   db.exec("ALTER TABLE usuarios ADD COLUMN nome TEXT DEFAULT ''");
 } catch (e) {}
 
+// ── AUTH ROUTES ───────────────────────────────────────────────────────────────
+
 app.post("/register", async (req, res) => {
   const { email, senha, nome } = req.body;
-
-  if (!email || !senha) {
+  if (!email || !senha)
     return res.status(400).json({ erro: "E-mail e senha são obrigatórios." });
-  }
-
   try {
     const senhaCriptografada = await bcrypt.hash(senha, 10);
     db.prepare(
@@ -64,38 +71,28 @@ app.post("/register", async (req, res) => {
     ).run(email, senhaCriptografada, nome || "");
     res.status(201).json({ mensagem: "Usuário cadastrado com sucesso!" });
   } catch (err) {
-    if (err.message.includes("UNIQUE")) {
+    if (err.message.includes("UNIQUE"))
       return res
         .status(409)
         .json({ erro: "E-mail já cadastrado.", campo: "email" });
-    }
     res.status(500).json({ erro: "Erro interno no servidor." });
   }
 });
 
 app.post("/login", async (req, res) => {
   const { email, senha } = req.body;
-
-  if (!email || !senha) {
+  if (!email || !senha)
     return res.status(400).json({ erro: "Preencha todos os campos." });
-  }
-
   const usuario = db
     .prepare("SELECT * FROM usuarios WHERE email = ?")
     .get(email);
-
-  if (!usuario) {
+  if (!usuario)
     return res
       .status(401)
       .json({ erro: "E-mail não encontrado.", campo: "email" });
-  }
-
   const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
-
-  if (!senhaCorreta) {
+  if (!senhaCorreta)
     return res.status(401).json({ erro: "Senha incorreta.", campo: "senha" });
-  }
-
   res.status(200).json({
     mensagem: "Login realizado com sucesso!",
     email: usuario.email,
@@ -105,20 +102,13 @@ app.post("/login", async (req, res) => {
 
 app.post("/login-google", async (req, res) => {
   const { email, nome } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ erro: "E-mail não recebido." });
-  }
-
-  let usuario = db.prepare("SELECT * FROM usuarios WHERE email = ?").get(email);
-
-  if (!usuario) {
+  if (!email) return res.status(400).json({ erro: "E-mail não recebido." });
+  if (!db.prepare("SELECT * FROM usuarios WHERE email = ?").get(email)) {
     db.prepare("INSERT INTO usuarios (email, senha) VALUES (?, ?)").run(
       email,
       "google-oauth",
     );
   }
-
   res.status(200).json({
     mensagem: "Login com Google realizado!",
     email,
@@ -128,237 +118,163 @@ app.post("/login-google", async (req, res) => {
 
 app.post("/salvar-configs", (req, res) => {
   const { email, configs } = req.body;
-
   db.prepare("UPDATE usuarios SET configs = ? WHERE email = ?").run(
     JSON.stringify(configs),
     email,
   );
-
   res.status(200).json({ mensagem: "Configs salvas!" });
 });
 
 app.post("/carregar-configs", (req, res) => {
   const { email } = req.body;
-
   const usuario = db
     .prepare("SELECT configs FROM usuarios WHERE email = ?")
     .get(email);
-
-  if (!usuario) {
+  if (!usuario)
     return res.status(404).json({ erro: "Usuário não encontrado." });
-  }
-
   res.status(200).json({ configs: JSON.parse(usuario.configs || "{}") });
 });
 
-// ✅ RECUPERAR SENHA - Gera token de 6 dígitos e envia por email
 app.post("/recuperar-senha", async (req, res) => {
   const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ erro: "E-mail é obrigatório." });
-  }
-
-  const usuario = db
-    .prepare("SELECT * FROM usuarios WHERE email = ?")
-    .get(email);
-
-  if (!usuario) {
+  if (!email) return res.status(400).json({ erro: "E-mail é obrigatório." });
+  if (!db.prepare("SELECT * FROM usuarios WHERE email = ?").get(email))
     return res.status(404).json({ erro: "E-mail não encontrado." });
-  }
 
-  // Gera token de 6 dígitos numéricos
   const token = Math.floor(100000 + Math.random() * 900000).toString();
-
-  // Token expira em 15 minutos
   const expiraEm = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-
-  // Salva token no banco
   db.prepare(
     "INSERT INTO tokens_recuperacao (email, token, expira_em) VALUES (?, ?, ?)",
   ).run(email, token, expiraEm);
 
-  // Envia email
   try {
     await transporter.sendMail({
-      from: '"AosFatos" <seuemail@gmail.com>',
+      from: '"VerusAI" <seuemail@gmail.com>',
       to: email,
       subject: "🔐 Código de Recuperação de Senha",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">Recuperação de Senha</h2>
-          <p>Você solicitou a recuperação de senha da sua conta AosFatos.</p>
-          <div style="background: #f1ae2b; color: #000; padding: 20px; border-radius: 8px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 4px; margin: 20px 0;">
-            ${token}
-          </div>
-          <p><strong>Este código expira em 15 minutos.</strong></p>
-          <p>Se você não solicitou essa recuperação, ignore este e-mail.</p>
-          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
-          <p style="color: #888; font-size: 12px;">AosFatos - Verificador de Notícias</p>
-        </div>
-      `,
+      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+        <h2>Recuperação de Senha</h2>
+        <div style="background:#f1ae2b;color:#000;padding:20px;border-radius:8px;text-align:center;font-size:32px;font-weight:bold;letter-spacing:4px;margin:20px 0">${token}</div>
+        <p><strong>Este código expira em 15 minutos.</strong></p>
+      </div>`,
     });
-
-    console.log(`✅ Token enviado para ${email}: ${token}`);
     res.status(200).json({ mensagem: "Código enviado com sucesso!" });
   } catch (error) {
-    console.error("❌ Erro ao enviar email:", error);
     res.status(500).json({ erro: "Erro ao enviar email. Tente novamente." });
   }
 });
 
-// ✅ REDEFINIR SENHA com token
 app.post("/redefinir-senha", async (req, res) => {
   const { token, novaSenha } = req.body;
-
-  if (!token || !novaSenha) {
+  if (!token || !novaSenha)
     return res
       .status(400)
       .json({ erro: "Token e nova senha são obrigatórios." });
-  }
-
-  // Busca token válido
   const tokenData = db
     .prepare(
       "SELECT * FROM tokens_recuperacao WHERE token = ? AND usado = 0 AND expira_em > datetime('now')",
     )
     .get(token);
-
-  if (!tokenData) {
+  if (!tokenData)
     return res.status(400).json({ erro: "Código inválido ou expirado." });
-  }
-
   try {
-    // Atualiza a senha
-    const senhaCriptografada = await bcrypt.hash(novaSenha, 10);
     db.prepare("UPDATE usuarios SET senha = ? WHERE email = ?").run(
-      senhaCriptografada,
+      await bcrypt.hash(novaSenha, 10),
       tokenData.email,
     );
-
-    // Marca token como usado
     db.prepare("UPDATE tokens_recuperacao SET usado = 1 WHERE token = ?").run(
       token,
     );
-
     res.status(200).json({ mensagem: "Senha redefinida com sucesso!" });
   } catch (err) {
     res.status(500).json({ erro: "Erro ao redefinir senha." });
   }
 });
 
-const { classifyPage } = require("./services/classifyPage");
-const { extractMainContent } = require("./services/extractMainContent");
-const { extractClaims } = require("./services/extractClaims");
-const { checkClaims } = require("./services/checkClaims");
-const { rankSources } = require("./services/rankSources");
-const { buildFinalResult } = require("./services/buildFinalResult");
-const { analyzeSource } = require("./services/analyzeSource");
-const { extractVideoContent } = require("./services/extractVideoContent");
+// ── PIPELINE DE ANÁLISE ──────────────────────────────────────────────────────
 
-const { searchRelatedNews } = require("./services/searchRelatedNews");
+const { runPipeline } = require("./services/runPipeline.js");
 
 app.post("/analisar", async (req, res) => {
-  const { text, title, url, siteName, foundLinks, imageUrl, platform, hasMultipleTopics, sourceHandle, sourceUrl, frames } = req.body;
-
   try {
-    const classificacao = await classifyPage(text);
-    const conteudo = await extractMainContent(text);
+    const pageData = req.body;
 
-    const [claimsResult, sourceInfo] = await Promise.all([
-      extractClaims(conteudo.corpo),
-      (platform === "youtube" || platform === "instagram" || platform === "twitter" || platform === "tiktok")
-        ? analyzeSource({ sourceHandle, sourceUrl, platform, title, text: conteudo.corpo })
-        : Promise.resolve(null),
-    ]);
-
-    const [checagem, materiasMap] = await Promise.all([
-      checkClaims(claimsResult.afirmacoes),
-      searchRelatedNews(claimsResult.afirmacoes),
-    ]);
-
-    // Mescla matérias relacionadas nas sources de cada claim
-    checagem.resultados = checagem.resultados.map(r => {
-      const materias = materiasMap[r.afirmacao] || [];
-      if (materias.length === 0) return r;
-      const urlsExistentes = new Set(r.sources.map(s => s.url));
-      const novas = materias
-        .filter(m => !urlsExistentes.has(m.url))
-        .map(m => ({ title: m.veiculo || m.title, url: m.url, sourceType: "secondary", snippet: m.data ? `${m.title} — ${m.data}` : m.title }));
-      return { ...r, sources: [...r.sources, ...novas].slice(0, 4) };
-    });
-
-    // Se houver claims sem evidência e existirem frames, tenta complementar com visão
-    const semEvidencia = checagem.resultados.filter(r => r.status === "insufficient_evidence");
-    if (semEvidencia.length > 0 && Array.isArray(frames) && frames.length > 0) {
-      console.log(`[/analisar] ${semEvidencia.length} claims sem evidência — tentando complementar com frames...`);
-      const videoContext = await extractVideoContent(frames);
-      if (videoContext && videoContext !== "sem complemento visual") {
-        const afirmacoesComVideo = semEvidencia.map(r => `${r.afirmacao} [contexto visual: ${videoContext}]`);
-        const checagemVideo = await checkClaims(afirmacoesComVideo);
-        const videoMap = new Map(
-          checagemVideo.resultados.map((r, i) => [semEvidencia[i]?.afirmacao, r])
-        );
-        checagem.resultados = checagem.resultados.map(r => {
-          if (r.status !== "insufficient_evidence") return r;
-          const melhorado = videoMap.get(r.afirmacao);
-          return melhorado && melhorado.status !== "insufficient_evidence" ? { ...melhorado, afirmacao: r.afirmacao } : r;
-        });
-      }
+    if (!pageData || typeof pageData !== "object") {
+      return res.status(400).json({
+        ok: false,
+        erro: "Dados da página ausentes.",
+      });
     }
 
-    const fontes = rankSources(checagem.resultados || []);
-    const resultado = buildFinalResult(classificacao.tipo, conteudo, checagem, fontes, sourceInfo);
-
-    // Segunda verificação: re-testa claims ainda sem conclusão
-    const claimsSemConclusao = resultado.claims.filter(c =>
-      c.verdict === "insufficient_evidence" || c.verdict === "not_checkable"
-    );
-
-    if (claimsSemConclusao.length > 0) {
-      console.log(`[/analisar] Segunda verificação: ${claimsSemConclusao.length} claims sem conclusão...`);
-      const [checagem2, materias2] = await Promise.all([
-        checkClaims(claimsSemConclusao.map(c => c.text)),
-        searchRelatedNews(claimsSemConclusao.map(c => c.text)),
-      ]);
-
-      // Mescla matérias da segunda rodada
-      checagem2.resultados = checagem2.resultados.map(r => {
-        const materias = materias2[r.afirmacao] || [];
-        if (materias.length === 0) return r;
-        const urlsExistentes = new Set(r.sources.map(s => s.url));
-        const novas = materias
-          .filter(m => !urlsExistentes.has(m.url))
-          .map(m => ({ title: m.veiculo || m.title, url: m.url, sourceType: "secondary", snippet: m.data ? `${m.title} — ${m.data}` : m.title }));
-        return { ...r, sources: [...r.sources, ...novas].slice(0, 4) };
+    if (!pageData.url) {
+      return res.status(400).json({
+        ok: false,
+        erro: "URL da página é obrigatória.",
       });
-
-      const mapa2 = new Map(checagem2.resultados.map(r => [r.afirmacao.trim().toLowerCase(), r]));
-
-      // Substitui no checagem original apenas os que melhoraram
-      checagem.resultados = checagem.resultados.map(r => {
-        if (r.status !== "insufficient_evidence" && r.status !== "not_checkable") return r;
-        const melhorado = mapa2.get(r.afirmacao.trim().toLowerCase());
-        if (!melhorado) return r;
-        const melhorou = melhorado.status !== "insufficient_evidence" && melhorado.status !== "not_checkable";
-        return melhorou ? { ...melhorado, afirmacao: r.afirmacao } : r;
-      });
-
-      // Reconstrói resultado final com dados atualizados
-      const fontes2 = rankSources(checagem.resultados);
-      const resultado2 = buildFinalResult(classificacao.tipo, conteudo, checagem, fontes2, sourceInfo);
-      console.log(`[/analisar] Segunda verificação concluída`);
-      return res.json(resultado2);
     }
 
-    res.json(resultado);
+    const resultado = await runPipeline(pageData);
+
+    return res.status(200).json(resultado);
   } catch (err) {
-    console.error("[/analisar] ERRO:", err.message);
-    console.error(err.stack);
-    res.status(500).json({ pageType: "error", summary: "Erro ao analisar o conteúdo.", overallVerdict: "unverifiable", confidenceLabel: "baixa", confidenceScore: 0, claims: [], links: [], warnings: [err.message] });
+    console.error("[/analisar] erro:", err);
+
+    return res.status(500).json({
+      ok: false,
+      erro: err.message || "Erro interno ao analisar a página.",
+    });
   }
 });
 
+// ── SITE E API PÚBLICA ────────────────────────────────────────────────────────
+
+app.use("/site", express.static(path.join(__dirname, "../../public")));
+
+app.get("/api/analises", (req, res) => {
+  const { pagina = 1, busca = "", veredicto = "" } = req.query;
+  const limite = 12;
+  const offset = (parseInt(pagina) - 1) * limite;
+  let where = "WHERE 1=1";
+  const params = [];
+  if (busca) {
+    where += " AND (url LIKE ? OR titulo LIKE ?)";
+    params.push(`%${busca}%`, `%${busca}%`);
+  }
+  if (veredicto) {
+    where += " AND veredicto = ?";
+    params.push(veredicto);
+  }
+  const total = db
+    .prepare(`SELECT COUNT(*) as n FROM cache_analises ${where}`)
+    .get(...params).n;
+  const rows = db
+    .prepare(
+      `SELECT url, titulo, veredicto, score, criado_em FROM cache_analises ${where} ORDER BY criado_em DESC LIMIT ? OFFSET ?`,
+    )
+    .all(...params, limite, offset);
+  res.json({ total, paginas: Math.ceil(total / limite), analises: rows });
+});
+
+app.get("/api/analises/detalhe", (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ erro: "URL obrigatória" });
+  const row = db
+    .prepare("SELECT resultado, criado_em FROM cache_analises WHERE url = ?")
+    .get(url);
+  if (!row) return res.status(404).json({ erro: "Não encontrada" });
+  res.json({ resultado: JSON.parse(row.resultado), criado_em: row.criado_em });
+});
+
+app.delete("/api/analises", (req, res) => {
+  const { url, adminKey } = req.body;
+  if (adminKey !== process.env.ADMIN_KEY)
+    return res.status(403).json({ erro: "Não autorizado" });
+  db.prepare("DELETE FROM cache_analises WHERE url = ?").run(url);
+  res.json({ mensagem: "Removida" });
+});
+
 app.listen(3000, () =>
-  console.log("Servidor rodando em http://localhost:3000"),
+  console.log(
+    "Servidor rodando em http://localhost:3000 | Site: http://localhost:3000/site",
+  ),
 );

@@ -266,10 +266,17 @@ aside.tema-escuro .circleTema {
   font-weight: 700;
 }
 
-.claim-summary {
+.claim-summary,
+.claim-reason {
   font-size: 11px;
   line-height: 1.5;
   opacity: 0.75;
+}
+
+.claim-reason {
+  opacity: 1;
+  color: #c0392b;
+  font-style: italic;
 }
 
 .claim-sources {
@@ -957,9 +964,6 @@ input.input-erro {
   cursor: pointer;
 }
 
-#menuLogout p {
-}
-
 .icon-logout-menu {
   width: 14px;
   height: 14px;
@@ -1018,9 +1022,6 @@ input.input-erro {
   padding: 2px;
   cursor: pointer;
   transition: background 0.3s ease;
-}
-
-.retangleConfig.ativo-config {
 }
 
 .circleConfig {
@@ -1280,4 +1281,11 @@ aside.alto-contraste .mensagemIA {
   font-size: 11px;
   text-align: center;
   line-height: 1.4;
+}
+
+.claim-checked-at {
+  display: block;
+  font-size: 10px;
+  color: var(--texto-secundario);
+  margin-top: 4px;
 }

@@ -97,6 +97,7 @@ function criarSidebar(analysis, mostrarLoginImediato) {
         '<div class="menuConfigItem"><p>Alto contraste</p><div class="retangleConfig" data-config="contraste"><div class="circleConfig"></div></div></div>' +
         '<div class="menuConfigItem"><p>Tema escuro</p><div class="retangleConfig" data-config="tema"><div class="circleConfig"></div></div></div>' +
         '<div class="menuConfigItem"><p>Leitor de Notícia</p><div class="retangleConfig" data-config="leitornoticias"><div class="circleConfig"></div></div></div>' +
+        '<div class="menuConfigItem"><p>Modo Teste (sem IA)</p><div class="retangleConfig" data-config="modoTeste"><div class="circleConfig"></div></div></div>' +
       '</div>' +
     '</div>';
 
@@ -245,10 +246,17 @@ function criarSidebar(analysis, mostrarLoginImediato) {
     chatMensagens.scrollTop = chatMensagens.scrollHeight;
 
     try {
-      var resposta = await analyzeWithOpenAI(
-        { text: texto, url: window.location.href, title: null, foundLinks: [], imageUrl: null, platform: "web", hasMultipleTopics: false },
-        []
-      );
+      var chatPayload = { text: texto, url: window.location.href, title: document.title, foundLinks: [], imageUrl: null };
+      var res = await new Promise(function(resolve) {
+        chrome.runtime.sendMessage({
+          type: "FETCH",
+          url: "http://localhost:3000/analisar",
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: chatPayload
+        }, resolve);
+      });
+      var resposta = (res && res.ok) ? res.data : { summary: res?.data?.erro || "Erro no servidor", links: [] };
       var linksHTML = resposta.links && resposta.links.length > 0
         ? resposta.links.map(function(l) { return "<a href='" + l.url + "' target='_blank'>" + l.title + "</a>"; }).join(" · ")
         : "";
@@ -268,7 +276,11 @@ function criarSidebar(analysis, mostrarLoginImediato) {
       });
     }, 100);
   } else {
-    setTimeout(function() { chatInput.focus(); }, 100);
+    setTimeout(function() {
+      var sx = window.scrollX, sy = window.scrollY;
+      chatInput.focus({ preventScroll: true });
+      window.scrollTo(sx, sy);
+    }, 100);
   }
 
   // Carrega configs ao abrir (apenas uma vez)
@@ -277,7 +289,85 @@ function criarSidebar(analysis, mostrarLoginImediato) {
   });
 }
 
+function _formatarData(valor) {
+  try {
+    var d = new Date(valor);
+    if (isNaN(d.getTime())) return valor;
+    return d.toLocaleString("pt-BR", {
+      day: "2-digit", month: "long", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+  } catch(e) { return valor; }
+}
+
 function _renderAnalysis(shadow, open, analysis, chatMensagens) {
+  // Payload bruto do extrator (sem summary/claims)
+  if (!analysis.summary && !analysis.claims) {
+    if (analysis.aviso) {
+      var msgAviso = document.createElement("div");
+      msgAviso.className = "mensagemIAPrimeira";
+      msgAviso.innerHTML = '<p class="result">⚠️ Aviso</p><p id="textAnalysis">' + analysis.aviso + '</p>';
+      chatMensagens.appendChild(msgAviso);
+      chatMensagens.scrollTop = chatMensagens.scrollHeight;
+      return;
+    }
+
+    // Resultado do pipeline do servidor
+    var resultado = analysis._resultado;
+    var payload = analysis._payload || analysis;
+
+    var statusServidor = "";
+    if (resultado && resultado.erro) {
+      statusServidor = "<div style='background:#ff5858;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;'>❌ Erro no servidor: " + resultado.erro + "</div>";
+    } else if (resultado && resultado.etapa === "classifyPage") {
+      var c = resultado.classificacao || {};
+      var cor = resultado.status === "ignorado" ? "#f1ae2b" : "#3fb537";
+      var icone = resultado.status === "ignorado" ? "⚠️" : "✅";
+      statusServidor =
+        "<div style='background:" + cor + ";color:#000;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;'>" +
+        icone + " Pipeline: <strong>" + resultado.status + "</strong> &nbsp;|&nbsp; Tipo: <strong>" + (c.tipo || "-") + "</strong> &nbsp;|&nbsp; Confiança: <strong>" + (c.confianca ? Math.round(c.confianca * 100) + "%" : "-") + "</strong>" +
+        (c.motivoClassificacao ? "<br/><span style='font-size:11px;'>" + c.motivoClassificacao + "</span>" : "") +
+        "</div>";
+    } else if (resultado) {
+      statusServidor = "<div style='background:#3fb537;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;'>✅ Pipeline concluído com sucesso.</div>";
+    } else {
+      statusServidor = "<div style='background:#555;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;'>⚠️ Servidor não respondeu. Verifique se está rodando.</div>";
+    }
+    var campos = [
+      { label: "URL", value: payload.url },
+      { label: "Título", value: payload.title },
+      { label: "Descrição", value: payload.description },
+      { label: "Site", value: payload.siteName },
+      { label: "Autor", value: payload.author },
+      { label: "Legenda", value: payload.caption || null },
+      { label: "Data de publicação", value: payload.publishDate ? _formatarData(payload.publishDate) : null },
+      { label: "Idioma", value: payload.language },
+      { label: "Tipo de página", value: payload.pageType },
+      { label: "Transcrição", value: payload.transcript || null },
+      { label: "Texto capturado", value: payload.transcript ? null : (payload.text || null) },
+      { label: "Tamanho do texto", value: payload.textLength ? payload.textLength + " caracteres" : null },
+      { label: "Domínio", value: payload.domain || null },
+      { label: "Títulos encontrados", value: payload.headings && payload.headings.length ? payload.headings.join(" · ") : null },
+      { label: "Links encontrados", value: payload.links && payload.links.length ? payload.links.length + " links" : null },
+    ];
+
+    var camposHTML = campos
+      .filter(function(c) { return c.value; })
+      .map(function(c) {
+          return "<div class='claim-item'><p class='claim-text'><strong>" + c.label + ":</strong> " + c.value + "</p></div>";
+        }).join("");
+
+    var msgIA = document.createElement("div");
+    msgIA.className = "mensagemIAPrimeira";
+    msgIA.innerHTML =
+      statusServidor +
+      '<p class="result">Dados Extraídos da Página</p>' +
+      '<div id="claimsSection">' + camposHTML + '</div>';
+    chatMensagens.appendChild(msgIA);
+    chatMensagens.scrollTop = chatMensagens.scrollHeight;
+    return;
+  }
+
   var sourceHTML = analysis.source ? _buildSourceHTML(analysis.source) : "";
   var claimsHTML = analysis.claims && analysis.claims.length > 0 ? _buildClaimsHTML(analysis.claims) : "";
   var linksHTML = _buildLinksHTML(analysis);
@@ -314,7 +404,7 @@ function _buildSourceHTML(s) {
 function _buildClaimsHTML(claims) {
   var verdictLabels = {
     supported: "✅ Confirmada", disputed: "❌ Contestada", mixed: "⚠️ Divergente",
-    insufficient_evidence: "🔍 Não há como confirmar", not_checkable: "— Não verificável",
+    insufficient_evidence: "🔍 Inconclusivo", not_checkable: "— Não verificável",
   };
   return claims.map(function(c) {
     var verdictLabel = verdictLabels[c.verdict] || c.verdict;
@@ -324,12 +414,28 @@ function _buildClaimsHTML(claims) {
             (s.snippet ? "<span class='source-snippet'>" + s.snippet + "</span>" : "") + "</div>";
         }).join("")
       : "";
-    var claimTopic = c.summary ? c.summary.split(/[.,!?]/)[0].trim() : c.text;
+    var reasonHTML = (c.verdict === "disputed" || c.verdict === "mixed") && c.summary
+      ? "<p class='claim-reason'>" + c.summary + "</p>"
+      : "";
+    var checkedAtHTML = "";
+    if (c.checkedAt) {
+      try {
+        var d = new Date(c.checkedAt);
+        var dataStr = d.toLocaleDateString("pt-BR");
+        var horaStr = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        checkedAtHTML = "<span class='claim-checked-at'>Verificado em " + dataStr + " às " + horaStr + "</span>";
+      } catch(e) {
+        console.warn("[sidebar] Erro ao formatar checkedAt:", c.checkedAt, e);
+      }
+    } else {
+      console.log("[sidebar] Claim sem checkedAt:", c.text?.slice(0, 50));
+    }
     return "<div class='claim-item'>" +
-      "<p class='claim-text'>" + claimTopic + "</p>" +
+      "<p class='claim-text'>" + c.text + "</p>" +
       "<span class='claim-verdict'>" + verdictLabel + "</span>" +
-      (c.summary ? "<p class='claim-summary'>" + c.summary + "</p>" : "") +
+      reasonHTML +
       (sourcesHTML ? "<div class='claim-sources'>" + sourcesHTML + "</div>" : "") +
+      checkedAtHTML +
       "</div>";
   }).join("");
 }

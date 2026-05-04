@@ -1,47 +1,120 @@
-const { callOpenAIJSON } = require("./openai");
+// services/classifyPage.js
+// Classifica a página usando o Prompt salvo na OpenAI
 
-const TIPOS_VALIDOS = ["noticia", "opiniao", "busca", "generico"];
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: f }) => f(...args));
 
-async function classifyPage(text) {
-  if (!text || text.trim().length < 100) {
-    console.warn("[classifyPage] Texto muito curto, classificando como generico");
-    return { tipo: "generico", confianca: 0 };
+const TIPOS_VALIDOS = [
+  "noticia",
+  "opiniao",
+  "busca",
+  "social",
+  "produto",
+  "generico",
+  "erro",
+];
+const TIPOS_CONTINUAR = ["noticia", "opiniao", "social"];
+
+function normalizarClassificacao(resultado) {
+  const tipo = TIPOS_VALIDOS.includes(resultado.tipo)
+    ? resultado.tipo
+    : "generico";
+  return {
+    tipo,
+    confianca:
+      typeof resultado.confianca === "number"
+        ? Math.min(1, Math.max(0, resultado.confianca))
+        : 0,
+    conteudoInutilDetectado: Array.isArray(resultado.conteudoInutilDetectado)
+      ? resultado.conteudoInutilDetectado
+      : [],
+    trechosUteis: Array.isArray(resultado.trechosUteis)
+      ? resultado.trechosUteis
+      : [],
+    tituloProvavel:
+      typeof resultado.tituloProvavel === "string"
+        ? resultado.tituloProvavel
+        : "",
+    resumoConteudoUtil:
+      typeof resultado.resumoConteudoUtil === "string"
+        ? resultado.resumoConteudoUtil
+        : "",
+    motivoClassificacao:
+      typeof resultado.motivoClassificacao === "string"
+        ? resultado.motivoClassificacao
+        : "",
+    deveContinuarAnalise: TIPOS_CONTINUAR.includes(tipo),
+  };
+}
+
+async function classifyPage(pageData) {
+  console.log(
+    "[classifyPage] prompt id:",
+    process.env.OPENAI_CLASSIFY_PAGE_PROMPT_ID,
+  );
+
+  console.log("[classifyPage] dados enviados:", {
+    url: pageData.url,
+    title: pageData.title,
+    textPreview: pageData.text?.slice(0, 200),
+    textLength: pageData.text?.length,
+  });
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt: {
+        id: process.env.OPENAI_CLASSIFY_PAGE_PROMPT_ID,
+        version: "9",
+        variables: {
+          url: pageData.url || "",
+          domain: pageData.domain || "",
+          title: pageData.title || "",
+          description: pageData.description || "",
+          sitename: pageData.siteName || "",
+          author: pageData.author || "",
+          publishdate: pageData.publishDate || "",
+          imageurl: pageData.imageUrl || "",
+          language: pageData.language || "",
+          pagetype: pageData.pageType || "",
+          headings: JSON.stringify(pageData.headings || []),
+          links: JSON.stringify(pageData.links || []),
+          textlength: String(pageData.textLength || 0),
+          text: pageData.text || "",
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `OpenAI classifyPage error: ${response.status} - ${errorText}`,
+    );
   }
 
-  const prompt = `
-Analise o texto abaixo e classifique o tipo de conteúdo da página.
+  const data = await response.json();
 
-Tipos possíveis:
-- "noticia": reportagem, artigo jornalístico com fatos e fontes
-- "opiniao": editorial, coluna, artigo de opinião sem fatos verificáveis
-- "busca": página de resultados de busca (Google, Bing, etc.)
-- "generico": homepage, feed de redes sociais, e-commerce, ou qualquer outra coisa
+  // Extrai o texto da resposta
+  let texto = data.output_text;
+  if (!texto && Array.isArray(data.output)) {
+    texto = data.output
+      .flatMap((item) => item.content || [])
+      .filter((c) => c.type === "output_text")
+      .map((c) => c.text)
+      .join("");
+  }
 
-Retorne APENAS um JSON:
-{
-  "tipo": "noticia" | "opiniao" | "busca" | "generico",
-  "confianca": 0.0 a 1.0
+  let resultado;
+  try {
+    resultado = JSON.parse(texto);
+  } catch (e) {
+    throw new Error("A resposta do classifyPage não veio em JSON válido.");
+  }
+
+  return normalizarClassificacao(resultado);
 }
-
-Se o texto parecer um feed com múltiplos assuntos misturados, classifique como "generico".
-Se a confiança for menor que 0.5, prefira "generico".
-
-TEXTO:
-${text.slice(0, 2000)}
-  `;
-
-  const resultado = await callOpenAIJSON(prompt, { caller: "classifyPage" });
-
-  const tipo_raw = TIPOS_VALIDOS.includes(resultado.tipo) ? resultado.tipo : "generico";
-  const confianca = typeof resultado.confianca === "number"
-    ? Math.min(1, Math.max(0, resultado.confianca))
-    : 0.5;
-
-  // Força generico se confiança baixa — não depende só da IA obedecer o prompt
-  const tipo = confianca < 0.5 ? "generico" : tipo_raw;
-
-  console.log(`[classifyPage] tipo=${tipo} confianca=${confianca}`);
-  return { tipo, confianca };
-}
-
 module.exports = { classifyPage };

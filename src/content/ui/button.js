@@ -28,13 +28,36 @@ function _criarPopupProgresso() {
     "padding:10px 14px;border-radius:8px;border:1px solid #00ff41;" +
     "z-index:2147483646;max-width:280px;line-height:1.6;" +
     "box-shadow:0 0 12px rgba(0,255,65,0.3);white-space:nowrap;";
-  popup.textContent = _ETAPAS[0];
+
+  var pct = document.createElement("div");
+  pct.style.cssText = "font-size:13px;font-weight:700;margin-bottom:6px;";
+
+  var barOuter = document.createElement("div");
+  barOuter.style.cssText = "width:100%;height:4px;background:#003a0f;border-radius:2px;margin-bottom:6px;";
+  var barInner = document.createElement("div");
+  barInner.style.cssText = "height:4px;background:#00ff41;border-radius:2px;transition:width 0.4s ease;width:0%;";
+  barOuter.appendChild(barInner);
+
+  var label = document.createElement("div");
+  label.textContent = _ETAPAS[0];
+
+  popup.appendChild(pct);
+  popup.appendChild(barOuter);
+  popup.appendChild(label);
   document.body.appendChild(popup);
 
+  function atualizar(etapa) {
+    var p = Math.round(((etapa + 1) / _ETAPAS.length) * 100);
+    pct.textContent = p + "%";
+    barInner.style.width = p + "%";
+    label.textContent = _ETAPAS[etapa];
+  }
+
+  atualizar(0);
   var etapa = 0;
   var intervalo = setInterval(function() {
     etapa = Math.min(etapa + 1, _ETAPAS.length - 1);
-    popup.textContent = _ETAPAS[etapa];
+    atualizar(etapa);
   }, 4000);
 
   return {
@@ -66,35 +89,32 @@ function CreateButton() {
       return;
     }
 
-    var article = getVisibleArticle();
-    if (!article) { alert("Nenhum post visível encontrado."); return; }
-
-    var expanded = expandPost(article);
-    if (expanded) await new Promise(function(r) { setTimeout(r, 400); });
-
-    var payload = extractPagePayload(article);
-    var video = article.querySelector("video");
-
     button.textContent = "Analisando...";
     button.disabled = true;
 
     var progresso = _criarPopupProgresso();
 
-    var analysis = { summary: "", links: [] };
+    var payload = await PageExtractor.extract();
+
+    var resultado = null;
     try {
-      analysis = video
-        ? await analyzeWithOpenAI(payload, await captureFrames(video))
-        : await analyzeWithOpenAI(payload, []);
+      var res = await new Promise(function(resolve) {
+        chrome.runtime.sendMessage({
+          type: "FETCH",
+          url: "http://localhost:3000/analisar",
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload
+        }, resolve);
+      });
+      if (res && res.ok) resultado = res.data;
+      else throw new Error(res?.data?.erro || "Erro no servidor");
     } catch(e) {
-      analysis = {
-        pageType: "error", summary: "Erro ao analisar o conteúdo.",
-        overallVerdict: "unverifiable", confidenceLabel: "baixa",
-        confidenceScore: 0, claims: [], links: [], warnings: ["Erro desconhecido"],
-      };
+      resultado = { erro: e.message };
     }
 
     progresso.remove();
-    criarSidebar(analysis, false);
+    criarSidebar({ _payload: payload, _resultado: resultado }, false);
     button.textContent = "Fechar";
     button.disabled = false;
   });
