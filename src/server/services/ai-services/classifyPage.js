@@ -3,62 +3,20 @@
 
 const fetch = (...args) =>
   import("node-fetch").then(({ default: f }) => f(...args));
-
-const TIPOS_VALIDOS = [
-  "noticia",
-  "opiniao",
-  "busca",
-  "social",
-  "produto",
-  "generico",
-  "erro",
-];
-const TIPOS_CONTINUAR = ["noticia", "opiniao", "social"];
-
-function normalizarClassificacao(resultado) {
-  const tipo = TIPOS_VALIDOS.includes(resultado.tipo)
-    ? resultado.tipo
-    : "generico";
-  return {
-    tipo,
-    confianca:
-      typeof resultado.confianca === "number"
-        ? Math.min(1, Math.max(0, resultado.confianca))
-        : 0,
-    conteudoInutilDetectado: Array.isArray(resultado.conteudoInutilDetectado)
-      ? resultado.conteudoInutilDetectado
-      : [],
-    trechosUteis: Array.isArray(resultado.trechosUteis)
-      ? resultado.trechosUteis
-      : [],
-    tituloProvavel:
-      typeof resultado.tituloProvavel === "string"
-        ? resultado.tituloProvavel
-        : "",
-    resumoConteudoUtil:
-      typeof resultado.resumoConteudoUtil === "string"
-        ? resultado.resumoConteudoUtil
-        : "",
-    motivoClassificacao:
-      typeof resultado.motivoClassificacao === "string"
-        ? resultado.motivoClassificacao
-        : "",
-    deveContinuarAnalise: TIPOS_CONTINUAR.includes(tipo),
-  };
-}
+const { normalizarClassificacao } = require("../normalizers/normalizarClassificacao");
 
 async function classifyPage(pageData) {
-  console.log(
-    "[classifyPage] prompt id:",
-    process.env.OPENAI_CLASSIFY_PAGE_PROMPT_ID,
-  );
+  // console.log(
+  //   "[classifyPage] prompt id:",
+  //   process.env.OPENAI_CLASSIFY_PAGE_PROMPT_ID,
+  // );
 
-  console.log("[classifyPage] dados enviados:", {
-    url: pageData.url,
-    title: pageData.title,
-    textPreview: pageData.text?.slice(0, 200),
-    textLength: pageData.text?.length,
-  });
+  // console.log("[classifyPage] dados enviados:", {
+  //   url: pageData.url,
+  //   title: pageData.title,
+  //   textPreview: pageData.text?.slice(0, 200),
+  //   textLength: pageData.text?.length,
+  // });
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -68,7 +26,7 @@ async function classifyPage(pageData) {
     body: JSON.stringify({
       prompt: {
         id: process.env.OPENAI_CLASSIFY_PAGE_PROMPT_ID,
-        version: "9",
+        version: "19",
         variables: {
           url: pageData.url || "",
           domain: pageData.domain || "",
@@ -111,6 +69,11 @@ async function classifyPage(pageData) {
   let resultado;
   try {
     resultado = JSON.parse(texto);
+    // console.log("[classifyPage] resultado bruto da IA:", resultado);
+    // console.log(
+    //   "[classifyPage] textoLimpo preview:",
+    //   resultado.textoLimpo?.slice(0, 500),
+    // );
   } catch (e) {
     throw new Error("A resposta do classifyPage não veio em JSON válido.");
   }
