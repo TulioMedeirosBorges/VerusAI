@@ -1,59 +1,260 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VerusAI — Análises de Notícias</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <header class="header">
-    <div class="header-inner">
-      <div class="logo">
-        <span class="logo-v">V</span>erusAI
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VerusAI — Análises de Notícias</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="loading.css" />
+  </head>
+  <body>
+    <!-- ═══════════════════════════════════════════════════════════
+         Loading Screen (removida pelo JS após animação)
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="ls" role="status" aria-live="polite" aria-label="Carregando analises">
+      <!-- Decorative corners -->
+      <div class="ls-corner ls-corner--tl"></div>
+      <div class="ls-corner ls-corner--tr"></div>
+      <div class="ls-corner ls-corner--bl"></div>
+      <div class="ls-corner ls-corner--br"></div>
+
+      <div class="ls-inner">
+        <div class="ls-kicker" aria-hidden="true">
+          <span>checagem em curso</span>
+          <span>fontes abertas</span>
+        </div>
+
+        <!-- Book stage (fades out before logo) -->
+        <div class="ls-stage" id="lsStage">
+          <!-- Book scene with perspective -->
+          <div class="ls-book-scene">
+            <span class="ls-chip ls-chip--top">fontes</span>
+            <span class="ls-chip ls-chip--left">contexto</span>
+            <span class="ls-chip ls-chip--right">evidencias</span>
+
+            <div class="ls-book">
+              <!-- Left half (read pages) -->
+              <div class="ls-book-left">
+                <div class="ls-left-content"></div>
+              </div>
+
+              <!-- Spine -->
+              <div class="ls-book-spine"></div>
+
+              <!-- Right half (pages to flip) -->
+              <div class="ls-book-right">
+                <!-- Page 1 -->
+                <div class="ls-page" id="lsp1">
+                  <div class="ls-pface ls-front">
+                    <div class="ls-pcontent lp-a"></div>
+                  </div>
+                  <div class="ls-pface ls-back">
+                    <div class="ls-pcontent lp-b"></div>
+                  </div>
+                </div>
+
+                <!-- Page 2 -->
+                <div class="ls-page" id="lsp2">
+                  <div class="ls-pface ls-front">
+                    <div class="ls-pcontent lp-c"></div>
+                  </div>
+                  <div class="ls-pface ls-back">
+                    <div class="ls-pcontent lp-d"></div>
+                  </div>
+                </div>
+
+                <!-- Page 3 -->
+                <div class="ls-page" id="lsp3">
+                  <div class="ls-pface ls-front">
+                    <div class="ls-pcontent lp-e"></div>
+                  </div>
+                  <div class="ls-pface ls-back">
+                    <div class="ls-pcontent lp-a"></div>
+                  </div>
+                </div>
+
+                <!-- Page 4 -->
+                <div class="ls-page" id="lsp4">
+                  <div class="ls-pface ls-front">
+                    <div class="ls-pcontent lp-b"></div>
+                  </div>
+                  <div class="ls-pface ls-back">
+                    <div class="ls-pcontent lp-c"></div>
+                  </div>
+                </div>
+
+                <!-- Page 5 -->
+                <div class="ls-page" id="lsp5">
+                  <div class="ls-pface ls-front">
+                    <div class="ls-pcontent lp-d"></div>
+                  </div>
+                  <div class="ls-pface ls-back">
+                    <div class="ls-pcontent lp-e"></div>
+                  </div>
+                </div>
+
+                <!-- Page 6 -->
+                <div class="ls-page" id="lsp6">
+                  <div class="ls-pface ls-front">
+                    <div class="ls-pcontent lp-a"></div>
+                  </div>
+                  <div class="ls-pface ls-back">
+                    <div class="ls-pcontent lp-b"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Book shadow -->
+          <div class="ls-book-shadow"></div>
+
+          <!-- Status text with animated dots -->
+          <div class="ls-status-wrap">
+            <span class="ls-status" id="lsStatus">Carregando análises</span>
+            <span class="ls-dots" id="lsDots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </div>
+          <div class="ls-step-count" id="lsStepCount">01 / 06</div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="ls-prog-wrap">
+          <div class="ls-prog-track">
+            <div class="ls-prog-fill" id="lsProgFill"></div>
+          </div>
+          <div class="ls-prog-meta">
+            <span class="ls-prog-pct" id="lsProgPct">0%</span>
+            <span class="ls-prog-label" id="lsProgLabel">Inicializando</span>
+          </div>
+        </div>
+
+        <!-- Logo reveal (shown at end) -->
+        <div class="ls-logo" id="lsLogo">
+          <div class="ls-logo-card">
+            <img src="/assets/images/VerusIAAtivo%201.svg" alt="VerusAI" />
+          </div>
+          <div class="ls-logo-tagline">Fact-checking editorial</div>
+        </div>
       </div>
-      <p class="header-sub">Banco público de notícias verificadas</p>
     </div>
-  </header>
 
-  <main class="main">
-    <section class="filtros">
-      <input type="text" id="busca" placeholder="Buscar por URL ou título..." />
-      <div class="filtro-btns">
-        <button class="filtro-btn ativo" data-v="">Todos</button>
-        <button class="filtro-btn" data-v="true">✅ Verdadeiro</button>
-        <button class="filtro-btn" data-v="mixed">⚠️ Misto</button>
-        <button class="filtro-btn" data-v="false">❌ Falso</button>
+    <!-- ═══════════════════════════════════════════════════════════
+         Main Application
+         ═══════════════════════════════════════════════════════════ -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo-badge">
+          <div class="logo">
+            <img src="/assets/images/VerusIAAtivo%201.svg" alt="VerusAI" />
+          </div>
+          <button class="badge sobre-btn" id="sobreBtn" type="button">
+            Sobre
+          </button>
+        </div>
+        <p class="header-sub">Banco público de notícias verificadas</p>
       </div>
-    </section>
+    </header>
 
-    <section class="stats" id="stats"></section>
+    <main class="main">
+      <section class="hero">
+        <div class="hero-left">
+          <div class="hero-strip">Revista de Fact-checking</div>
+          <h1>Descubra a verdade por trás de cada notícia</h1>
+          <p>
+            Uma curadoria editorial de análises verificadas com estilo de
+            recortes e camadas visuais.
+          </p>
+        </div>
+        <div class="hero-right">
+          <div class="hero-card">
+            <span class="hero-tag">Destaque</span>
+            <p>
+              Mais de 1.000 análises classificadas por veracidade, fontes e
+              contexto.
+            </p>
+          </div>
+        </div>
+      </section>
 
-    <section class="grid" id="grid">
-      <div class="loading">Carregando análises...</div>
-    </section>
+      <!-- ticker injetado pelo JS aqui -->
 
-    <div class="paginacao" id="paginacao"></div>
-  </main>
+      <section class="filtros">
+        <input
+          type="text"
+          id="busca"
+          placeholder="Buscar por URL ou título…"
+          autocomplete="off"
+        />
+        <div class="filtro-btns">
+          <button class="filtro-btn ativo" data-v="">Todos</button>
+          <button class="filtro-btn" data-v="true">✅ Verdadeiro</button>
+          <button class="filtro-btn" data-v="mixed">⚠️ Misto</button>
+          <button class="filtro-btn" data-v="false">❌ Falso</button>
+        </div>
+        <div class="filtro-extra" aria-label="Filtros avancados">
+          <label class="filtro-campo">
+            <span>Data inicial</span>
+            <input type="date" id="dataInicio" />
+          </label>
+          <label class="filtro-campo">
+            <span>Data final</span>
+            <input type="date" id="dataFim" />
+          </label>
+          <label class="filtro-campo">
+            <span>Fonte</span>
+            <select id="fonteFiltro">
+              <option value="">Todas as fontes</option>
+            </select>
+          </label>
+          <label class="filtro-campo">
+            <span>Ordenar</span>
+            <select id="ordenacaoFiltro">
+              <option value="recentes">Mais recentes</option>
+              <option value="antigas">Mais antigas</option>
+              <option value="titulo">Titulo A-Z</option>
+              <option value="veracidade">Veracidade</option>
+            </select>
+          </label>
+          <button class="filtro-limpar" id="limparFiltros" type="button">
+            Limpar filtros
+          </button>
+        </div>
+      </section>
 
-  <!-- Modal de detalhe -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal" id="modal">
-      <button class="modal-fechar" id="modalFechar">✕</button>
-      <div id="modalConteudo"></div>
+      <section class="stats" id="stats"></section>
+
+      <section class="grid" id="grid">
+        <div class="loading">Carregando análises…</div>
+      </section>
+
+      <div class="paginacao" id="paginacao"></div>
+    </main>
+
+    <!-- Modal de detalhe -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal" id="modal">
+        <button class="modal-fechar" id="modalFechar" aria-label="Fechar">
+          ✕
+        </button>
+        <div id="modalConteudo"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- Painel admin -->
-  <div class="admin-toggle" id="adminToggle" title="Admin">⚙</div>
-  <div class="admin-panel" id="adminPanel">
-    <h3>Painel Admin</h3>
-    <input type="password" id="adminKey" placeholder="Chave admin" />
-    <input type="text" id="adminUrl" placeholder="URL para remover" />
-    <button id="adminRemover">Remover análise</button>
-    <p id="adminMsg"></p>
-  </div>
+    <!-- Painel admin -->
+    <div class="admin-toggle" id="adminToggle" title="Admin">⚙</div>
+    <div class="admin-panel" id="adminPanel">
+      <h3>Painel Admin</h3>
+      <input type="password" id="adminKey" placeholder="Chave admin" />
+      <input type="text" id="adminUrl" placeholder="URL para remover" />
+      <button id="adminRemover">Remover análise</button>
+      <p id="adminMsg"></p>
+    </div>
 
-  <script src="app.js"></script>
-</body>
+    <script src="app.js"></script>
+    <script src="loading.js"></script>
+  </body>
 </html>

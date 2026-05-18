@@ -196,6 +196,10 @@ app.post("/redefinir-senha", async (req, res) => {
 const { runPipeline } = require("./services/runPipeline.js");
 
 app.post("/analisar", async (req, res) => {
+  // Remove o timeout padrão do Express (permite tempo ilimitado)
+  req.setTimeout(0);
+  res.setTimeout(0);
+
   try {
     const pageData = req.body;
 
@@ -228,6 +232,7 @@ app.post("/analisar", async (req, res) => {
 
 // ── SITE E API PÚBLICA ────────────────────────────────────────────────────────
 
+app.use("/assets", express.static(path.join(__dirname, "../../assets")));
 app.use("/site", express.static(path.join(__dirname, "../../public")));
 
 app.get("/api/analises", (req, res) => {

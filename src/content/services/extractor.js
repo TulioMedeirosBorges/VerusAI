@@ -227,7 +227,7 @@ var SiteSpecificStrategies = {
     // Se a transcrição já está no DOM, usa direto
     var transcriptImediata = _lerTranscricao();
     if (transcriptImediata)
-      return Promise.resolve({ ...base, transcript: transcriptImediata });
+      return Promise.resolve({ ...base, youtubeTranscript: transcriptImediata });
 
     // Tenta abrir a transcrição automaticamente
     return new Promise(function (resolve) {
@@ -255,7 +255,7 @@ var SiteSpecificStrategies = {
           transcriptBtn.click();
           setTimeout(function () {
             var transcript = _lerTranscricao();
-            resolve(transcript ? { ...base, transcript } : base);
+            resolve(transcript ? { ...base, youtubeTranscript: transcript } : base);
           }, 2500);
         } else {
           resolve(base);
@@ -338,6 +338,7 @@ var SiteSpecificStrategies = {
             text:
               containerBusca.innerText?.replace(/\s+/g, " ").trim() ||
               payload.text,
+            instagramTranscript: null, // TODO: Implementar extração de transcrição do Instagram
           });
         }, 800);
       } else {
@@ -366,6 +367,7 @@ var SiteSpecificStrategies = {
           text:
             containerBusca.innerText?.replace(/\s+/g, " ").trim() ||
             payload.text,
+          instagramTranscript: null, // TODO: Implementar extração de transcrição do Instagram
         });
       }
     });

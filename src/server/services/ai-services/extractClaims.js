@@ -3,10 +3,99 @@
 
 const fetch = (...args) =>
   import("node-fetch").then(({ default: f }) => f(...args));
-const { normalizeClaims } = require("../normalizers/normalizeClaims");
 
-async function extractClaims(classificacao, url = "") {
-  // console.log("[extractClaims] prompt id:", process.env.OPENAI_EXTRACT_CLAIMS_PROMPT_ID);
+function normalizeClaims(claimsData) {
+  const dados = claimsData.claims || claimsData;
+
+  const contexto = dados.contexto || {
+    url: dados.origem?.url,
+    veiculo: dados.origem?.sitename || dados.origem?.siteName,
+    datapublicacao: dados.origem?.publishdate || dados.origem?.publishDate,
+    tipo: dados.origem?.tipo,
+  };
+
+  const claimsArray =
+    dados.claims || dados.claimsselecionadas || dados.claimsSelecionadas || [];
+
+  const resumoOriginal =
+    dados.resumo || dados.resumoextracao || dados.resumoExtracao || {};
+
+  return {
+    contexto: {
+      url: contexto.url,
+      veiculo: contexto.veiculo,
+      datapublicacao: contexto.datapublicacao,
+      tipo: contexto.tipo,
+    },
+    claims: claimsArray.map((claim) => ({
+      id: claim.id,
+      texto: claim.texto,
+      tipo: claim.tipo || claim.tipoclaim || claim.tipoClaim,
+      importancia: claim.importancia,
+      motivo:
+        claim.motivo || claim.motivoimportancia || claim.motivoImportancia,
+      verificacoes: claim.verificacoes || {
+        ano: claim.exigeanocorreto || claim.exigeAnoCorreto,
+        data: claim.exigedatacorreta || claim.exigeDataCorreta,
+        local: claim.exigelocalcorreto || claim.exigeLocalCorreto,
+        pessoa: claim.exigepessoacorreta || claim.exigePessoaCorreta,
+        instituicao:
+          claim.exigeinstituicaocorreta || claim.exigeInstituicaoCorreta,
+      },
+      elementos: claim.elementos || {
+        datas:
+          claim.elementoscriticos?.anosoudatas ||
+          claim.elementosCriticos?.anosOuDatas ||
+          [],
+        locais:
+          claim.elementoscriticos?.locais ||
+          claim.elementosCriticos?.locais ||
+          [],
+        pessoas:
+          claim.elementoscriticos?.pessoas ||
+          claim.elementosCriticos?.pessoas ||
+          [],
+        instituicoes:
+          claim.elementoscriticos?.instituicoes ||
+          claim.elementosCriticos?.instituicoes ||
+          [],
+        numeros:
+          claim.elementoscriticos?.numerosouvalores ||
+          claim.elementosCriticos?.numerosOuValores ||
+          [],
+      },
+      contextochecagem:
+        claim.contextochecagem ||
+        claim.contextoChecagem ||
+        claim.contextonecessarioparachecagem ||
+        claim.contextoNecessarioParaChecagem,
+    })),
+    resumo: {
+      total:
+        resumoOriginal.total ||
+        resumoOriginal.totalclaimsselecionadas ||
+        resumoOriginal.totalClaimsSelecionadas ||
+        claimsArray.length,
+      complexa:
+        resumoOriginal.complexa ??
+        resumoOriginal.noticiacomplexa ??
+        resumoOriginal.noticiaComplexa ??
+        false,
+      observacoes: resumoOriginal.observacoes || "",
+    },
+  };
+}
+
+async function extractClaims(classificacao, pageData = {}) {
+  console.log("[extractClaims] Iniciando extração de claims...");
+  console.log(
+    "[extractClaims] prompt id:",
+    process.env.OPENAI_EXTRACT_CLAIMS_PROMPT_ID,
+  );
+  console.log(
+    "[extractClaims] textolimpo length:",
+    classificacao.textolimpo?.length,
+  );
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -17,9 +106,9 @@ async function extractClaims(classificacao, url = "") {
     body: JSON.stringify({
       prompt: {
         id: process.env.OPENAI_EXTRACT_CLAIMS_PROMPT_ID,
-        version: "4",
+        version: "6",
         variables: {
-          url: classificacao.url || "",
+          url: pageData.url || classificacao.url || "",
           categoriapagina: classificacao.categoriapagina || "",
           categoriatextoprincipal: classificacao.categoriatextoprincipal || "",
           tipo: classificacao.tipo || "",
@@ -28,7 +117,7 @@ async function extractClaims(classificacao, url = "") {
           motivoclassificacao: classificacao.motivoclassificacao || "",
           motivonaosernoticia: classificacao.motivonaosernoticia || "",
           devecontinuaranalise: String(classificacao.devecontinuaranalise),
-          publishdate: classificacao.publishdate || "",
+          publishdate: pageData.publishDate || classificacao.publishdate || "",
           local: classificacao.local || "",
         },
       },
@@ -56,16 +145,35 @@ async function extractClaims(classificacao, url = "") {
   let resultado;
   try {
     resultado = JSON.parse(texto);
-    // console.log("[extractClaims] resultado bruto da IA:", resultado);
+    console.log("[extractClaims] resultado bruto da IA:", resultado);
     console.log(
-      "[extractClaims] resultado completo:",
-      JSON.stringify(resultado, null, 2),
+      "[extractClaims] total de claims:",
+      resultado.claims?.length || 0,
     );
   } catch (e) {
+    console.error("[extractClaims] ❌ Erro ao parsear JSON:", texto);
     throw new Error("A resposta do extractClaims não veio em JSON válido.");
   }
 
-  return normalizeClaims(resultado);
+  const normalizado = normalizeClaims(resultado);
+
+  // Adiciona dados do pageData ao contexto normalizado
+  normalizado.contexto = {
+    ...normalizado.contexto,
+    url: pageData.url || normalizado.contexto.url || "",
+    veiculo: pageData.siteName || normalizado.contexto.veiculo || "",
+    datapublicacao:
+      pageData.publishDate || normalizado.contexto.datapublicacao || "",
+    tipo: classificacao.tipo || normalizado.contexto.tipo || "",
+  };
+
+  console.log(
+    "[extractClaims] resultado normalizado:",
+    JSON.stringify(normalizado, null, 2),
+  );
+  console.log("[extractClaims] ✅ Extração concluída!\n");
+
+  return normalizado;
 }
 
-module.exports = { extractClaims };
+module.exports = { extractClaims, normalizeClaims };
