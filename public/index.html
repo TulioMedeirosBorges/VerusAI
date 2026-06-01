@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VerusAI — Análises de Notícias</title>
+    <link rel="icon" type="image/png" href="/assets/icons/IconVerusAi.png" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="loading.css" />
   </head>
@@ -160,6 +161,15 @@
     </header>
 
     <main class="main">
+      <nav class="tabs" id="tabs" aria-label="Seções">
+        <button class="tab-btn ativo" data-view="analises" type="button">
+          <img class="tab-icon" src="/assets/icons/IconVerusAi.png" alt="" /> Análises
+        </button>
+        <button class="tab-btn" data-view="aovivo" type="button">
+          <span class="tab-dot" aria-hidden="true"></span> Ao Vivo
+        </button>
+      </nav>
+
       <section class="hero">
         <div class="hero-left">
           <div class="hero-strip">Revista de Fact-checking</div>
@@ -181,6 +191,9 @@
       </section>
 
       <!-- ticker injetado pelo JS aqui -->
+
+      <!-- Destaque: notícia com mais likes -->
+      <section class="destaque-likes reveal-section" id="destaqueLikes" hidden></section>
 
       <section class="filtros">
         <input
@@ -232,6 +245,39 @@
       </section>
 
       <div class="paginacao" id="paginacao"></div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           Notícias ao Vivo (RSS) — visível apenas na aba "Ao Vivo"
+           ═══════════════════════════════════════════════════════════ -->
+      <section class="ao-vivo" id="aoVivo" hidden>
+        <div class="ao-vivo-head">
+          <div class="ao-vivo-titulo">
+            <span class="ao-vivo-dot" aria-hidden="true"></span>
+            <h2>Notícias ao vivo</h2>
+          </div>
+          <div class="ao-vivo-meta">
+            <span id="aoVivoStatus" class="ao-vivo-status">Carregando…</span>
+            <button id="aoVivoRefresh" class="ao-vivo-refresh" type="button">
+              ↻ Atualizar
+            </button>
+          </div>
+        </div>
+
+        <div class="ao-vivo-topicos" id="aoVivoTopicos">
+          <button class="ao-vivo-chip ativo" data-topico="geral" type="button">Geral</button>
+          <button class="ao-vivo-chip" data-topico="brasil" type="button">Brasil</button>
+          <button class="ao-vivo-chip" data-topico="mundo" type="button">Mundo</button>
+          <button class="ao-vivo-chip" data-topico="economia" type="button">Economia</button>
+          <button class="ao-vivo-chip" data-topico="tecnologia" type="button">Tecnologia</button>
+          <button class="ao-vivo-chip" data-topico="ciencia" type="button">Ciência</button>
+          <button class="ao-vivo-chip" data-topico="saude" type="button">Saúde</button>
+          <button class="ao-vivo-chip" data-topico="esportes" type="button">Esportes</button>
+        </div>
+
+        <div class="ao-vivo-grid" id="aoVivoGrid">
+          <div class="loading">Carregando notícias…</div>
+        </div>
+      </section>
     </main>
 
     <!-- Modal de detalhe -->

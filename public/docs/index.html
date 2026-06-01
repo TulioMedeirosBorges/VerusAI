@@ -1,0 +1,1179 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentacao do Projeto VerusAI</title>
+    <link rel="stylesheet" href="docs.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Ir para o conteudo</a>
+
+    <header class="topbar">
+      <a class="brand" href="../" aria-label="Voltar para o site VerusAI">
+        <img src="/assets/images/VerusIAAtivo%201.svg" alt="VerusAI" />
+        <span>Documentacao</span>
+      </a>
+
+      <div class="top-actions">
+        <label class="search">
+          <span>Buscar</span>
+          <input
+            id="docSearch"
+            type="search"
+            placeholder="requisitos, API, pipeline..."
+            autocomplete="off"
+          />
+        </label>
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          type="button"
+          aria-label="Alternar tema"
+          title="Alternar tema"
+        >
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19"></path>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 14.4A7.6 7.6 0 0 1 9.6 4 8.1 8.1 0 1 0 20 14.4Z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="sidebar" aria-label="Navegacao da documentacao">
+        <nav>
+          <a href="#visao-geral">Visao geral</a>
+          <a href="#pdf">Base academica</a>
+          <a href="#identificacao">Identificacao</a>
+          <a href="#escopo">Escopo do sistema</a>
+          <a href="#stakeholders">Stakeholders</a>
+          <a href="#requisitos">Requisitos</a>
+          <a href="#casos-de-uso">Casos de uso</a>
+          <a href="#fluxos">Fluxos</a>
+          <a href="#arquitetura">Arquitetura</a>
+          <a href="#componentes">Componentes</a>
+          <a href="#pipeline">Pipeline</a>
+          <a href="#dados">Dados</a>
+          <a href="#api">API</a>
+          <a href="#contratos">Contratos</a>
+          <a href="#interfaces">Interfaces</a>
+          <a href="#regras">Regras</a>
+          <a href="#execucao">Execucao</a>
+          <a href="#qualidade">Qualidade</a>
+          <a href="#planejamento">Planejamento</a>
+          <a href="#glossario">Glossario</a>
+        </nav>
+      </aside>
+
+      <main id="conteudo" class="content">
+        <section class="intro doc-section" id="visao-geral" data-title="Visao geral">
+          <div class="intro-copy">
+            <p class="eyebrow">Projeto de Analise e Desenvolvimento de Sistemas</p>
+            <h1>VerusAI: extensao e plataforma de apoio a checagem de noticias</h1>
+            <p>
+              Esta documentacao transforma o codigo do projeto em uma visao
+              academica completa, seguindo o roteiro do PDF da disciplina de
+              Analise de Projetos e Sistemas da Universidade de Franca.
+            </p>
+          </div>
+
+          <div class="intro-visual" aria-label="Resumo visual do produto">
+            <div class="browser-frame">
+              <div class="browser-bar">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="browser-body">
+                <div class="mini-news">
+                  <strong>Noticia online</strong>
+                  <p>Texto, metadados, links e fontes capturados pela extensao.</p>
+                </div>
+                <div class="mini-side">
+                  <span>Veredito</span>
+                  <strong>Confianca + evidencias</strong>
+                  <small>Chat, fontes e historico</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="summary-band doc-section" data-title="Resumo executivo">
+          <article>
+            <span>Produto</span>
+            <strong>Extensao Chrome MV3 + servidor Express + site publico</strong>
+          </article>
+          <article>
+            <span>Objetivo</span>
+            <strong>Analisar noticias, extrair claims e mostrar evidencias</strong>
+          </article>
+          <article>
+            <span>Persistencia</span>
+            <strong>SQLite com usuarios, cache de analises e historico de chat</strong>
+          </article>
+        </section>
+
+        <section class="doc-section" id="pdf" data-title="Base academica">
+          <div class="section-heading">
+            <p class="eyebrow">PDF norteador</p>
+            <h2>Como o roteiro da disciplina foi aplicado</h2>
+            <p>
+              O PDF solicita a documentacao de um sistema de software com
+              problema de negocio, objetivos, stakeholders, requisitos, casos
+              de uso, arquitetura, prototipos e planejamento. As secoes abaixo
+              preenchem esse roteiro com base no projeto VerusAI.
+            </p>
+          </div>
+
+          <div class="timeline">
+            <article>
+              <span>1</span>
+              <strong>Analise do problema</strong>
+              <p>Dificuldade de avaliar a confiabilidade de noticias online em tempo de navegacao.</p>
+            </article>
+            <article>
+              <span>2</span>
+              <strong>Modelagem do sistema</strong>
+              <p>Extensao captura a pagina; servidor processa; site publica o acervo verificado.</p>
+            </article>
+            <article>
+              <span>3</span>
+              <strong>Entrega e avaliacao</strong>
+              <p>Requisitos, fluxos, arquitetura, telas e plano de evolucao ficam documentados aqui.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="identificacao" data-title="Identificacao">
+          <div class="section-heading">
+            <p class="eyebrow">Identificacao do projeto</p>
+            <h2>Dados academicos e escopo da entrega</h2>
+            <p>
+              Esta parte corresponde ao bloco inicial do PDF, onde a equipe
+              registra o sistema escolhido e delimita o que sera apresentado.
+              Os campos de aluno e turma podem ser completados pela equipe.
+            </p>
+          </div>
+
+          <div class="identity-grid">
+            <article>
+              <span>Nome do sistema</span>
+              <strong>VerusAI</strong>
+              <p>Extensao de navegador e plataforma web para analise de noticias, evidencias e confiabilidade.</p>
+            </article>
+            <article>
+              <span>Curso e disciplina</span>
+              <strong>Analise e Desenvolvimento de Sistemas</strong>
+              <p>Documentacao estruturada para Analise de Projetos e Sistemas.</p>
+            </article>
+            <article>
+              <span>Tipo de software</span>
+              <strong>Aplicacao web + extensao Chrome</strong>
+              <p>Arquitetura cliente-servidor com servicos externos de IA e persistencia local.</p>
+            </article>
+            <article>
+              <span>Entrega esperada</span>
+              <strong>Documentacao, demonstracao e codigo funcional</strong>
+              <p>O site atual consolida a documentacao exigida e serve como apoio para apresentacao.</p>
+            </article>
+          </div>
+
+          <div class="detail-note">
+            <strong>Resumo do sistema:</strong>
+            <p>
+              O VerusAI atua no momento da navegacao. Ele injeta botoes na
+              pagina, captura conteudo relevante, envia os dados para o servidor
+              local, executa um pipeline de verificacao baseado em IA, salva o
+              resultado no SQLite e apresenta uma resposta compreensivel no
+              painel lateral e no site publico.
+            </p>
+          </div>
+        </section>
+
+        <section class="doc-section split" id="escopo" data-title="Escopo do sistema">
+          <div class="section-heading">
+            <p class="eyebrow">Definicao do sistema</p>
+            <h2>Problema, proposta e objetivos</h2>
+          </div>
+
+          <div class="text-grid">
+            <article>
+              <h3>Problema de negocio</h3>
+              <p>
+                Usuarios encontram noticias, posts e conteudos de redes sociais
+                sem saber rapidamente se as afirmacoes centrais possuem base em
+                fontes confiaveis. A checagem manual exige tempo, contexto e
+                conhecimento tecnico.
+              </p>
+            </article>
+            <article>
+              <h3>Proposta</h3>
+              <p>
+                O VerusAI adiciona um botao de analise ao navegador, extrai o
+                conteudo principal da pagina, envia para um pipeline de IA e
+                devolve um painel com veredito, resumo, claims, evidencias,
+                fontes e chat contextual.
+              </p>
+            </article>
+            <article>
+              <h3>Objetivos</h3>
+              <ul>
+                <li>Classificar paginas e identificar se o conteudo e noticia.</li>
+                <li>Extrair afirmacoes verificaveis e evidencias relevantes.</li>
+                <li>Persistir analises para consulta publica e historico.</li>
+                <li>Oferecer recursos de acessibilidade, tema escuro e leitor.</li>
+              </ul>
+            </article>
+            <article>
+              <h3>Fronteiras</h3>
+              <p>
+                O sistema apoia a checagem e organizacao de evidencias. Ele nao
+                substitui revisao editorial humana nem garante disponibilidade
+                permanente de servicos externos de IA ou fontes abertas.
+              </p>
+            </article>
+          </div>
+
+          <div class="objective-matrix">
+            <article>
+              <h3>Objetivo geral</h3>
+              <p>
+                Reduzir o esforco de verificacao inicial de noticias online,
+                reunindo classificacao, evidencias, fontes e resumo em uma
+                experiencia integrada ao navegador.
+              </p>
+            </article>
+            <article>
+              <h3>Objetivos especificos</h3>
+              <ul>
+                <li>Automatizar a captura de conteudo de paginas jornalisticas e redes sociais suportadas.</li>
+                <li>Normalizar resultados do pipeline para uma interface simples de leitura.</li>
+                <li>Registrar analises ja feitas para evitar retrabalho e formar acervo consultavel.</li>
+                <li>Manter historico de conversas para usuarios autenticados.</li>
+              </ul>
+            </article>
+            <article>
+              <h3>Indicadores de sucesso</h3>
+              <ul>
+                <li>Usuario consegue iniciar uma analise em ate um clique depois de carregar a extensao.</li>
+                <li>Resultado final contem veredito, score, claims e fontes principais.</li>
+                <li>Analises salvas aparecem no site publico sem acao manual adicional.</li>
+                <li>Fluxos de login e recuperacao retornam mensagens claras de erro ou sucesso.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="stakeholders" data-title="Stakeholders">
+          <div class="section-heading">
+            <p class="eyebrow">Envolvidos</p>
+            <h2>Stakeholders e interesses</h2>
+          </div>
+
+          <div class="stakeholder-list">
+            <article>
+              <strong>Usuario leitor</strong>
+              <p>Quer entender rapidamente se uma noticia e confiavel.</p>
+            </article>
+            <article>
+              <strong>Usuario autenticado</strong>
+              <p>Usa chat, historico, configuracoes e recursos persistentes.</p>
+            </article>
+            <article>
+              <strong>Administrador</strong>
+              <p>Remove analises publicadas e acompanha o acervo publico.</p>
+            </article>
+            <article>
+              <strong>Professor ou avaliador</strong>
+              <p>Verifica documentacao, requisitos, arquitetura e prototipos.</p>
+            </article>
+            <article>
+              <strong>Servicos externos</strong>
+              <p>OpenAI, mecanismos de busca, fontes oficiais e paginas consultadas.</p>
+            </article>
+          </div>
+
+          <div class="responsibility-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Stakeholder</th>
+                  <th>Necessidade</th>
+                  <th>Resposta do sistema</th>
+                  <th>Risco associado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Leitor</td>
+                  <td>Obter contexto sem sair da pagina.</td>
+                  <td>Sidebar com veredito, resumo, evidencias e links.</td>
+                  <td>Interpretar a IA como decisao absoluta.</td>
+                </tr>
+                <tr>
+                  <td>Usuario logado</td>
+                  <td>Manter preferencias e conversas.</td>
+                  <td>Configuracoes salvas e historico local/servidor.</td>
+                  <td>Perda de historico se dados locais forem limpos.</td>
+                </tr>
+                <tr>
+                  <td>Administrador</td>
+                  <td>Controlar o que fica publicado.</td>
+                  <td>Painel admin no site e rota DELETE protegida por chave.</td>
+                  <td>Chave admin fraca ou exposta em ambiente incorreto.</td>
+                </tr>
+                <tr>
+                  <td>Avaliador</td>
+                  <td>Conferir coerencia entre projeto e teoria.</td>
+                  <td>Documentacao mapeada ao PDF e ao codigo.</td>
+                  <td>Escopo amplo dificultar demonstracao em sala.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="requisitos" data-title="Requisitos">
+          <div class="section-heading">
+            <p class="eyebrow">RF e RNF</p>
+            <h2>Requisitos do projeto</h2>
+          </div>
+
+          <div class="requirements">
+            <article>
+              <h3>Requisitos funcionais</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Codigo</th>
+                    <th>Descricao</th>
+                    <th>Implementacao</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>RF01</td>
+                    <td>Cadastrar, autenticar e recuperar senha de usuarios.</td>
+                    <td>Rotas /register, /login, /recuperar-senha e telas de login/cadastro.</td>
+                  </tr>
+                  <tr>
+                    <td>RF02</td>
+                    <td>Capturar conteudo da pagina aberta no navegador.</td>
+                    <td>PageExtractor em src/content/services/extractor.js.</td>
+                  </tr>
+                  <tr>
+                    <td>RF03</td>
+                    <td>Executar analise assíncrona de noticia.</td>
+                    <td>/analisar/start, /analisar/status/:jobId e runPipeline.</td>
+                  </tr>
+                  <tr>
+                    <td>RF04</td>
+                    <td>Exibir resultado no painel lateral.</td>
+                    <td>Sidebar com veredito, claims, fontes, alertas e score.</td>
+                  </tr>
+                  <tr>
+                    <td>RF05</td>
+                    <td>Publicar analises em site consultavel.</td>
+                    <td>Site em public/ consumindo /api/analises.</td>
+                  </tr>
+                  <tr>
+                    <td>RF06</td>
+                    <td>Permitir chat sobre noticias e guardar historico.</td>
+                    <td>/chat/noticias, /chat/historico e src/content/chat.</td>
+                  </tr>
+                  <tr>
+                    <td>RF07</td>
+                    <td>Salvar preferencias de acessibilidade por usuario.</td>
+                    <td>/salvar-configs, /carregar-configs e chrome.storage.</td>
+                  </tr>
+                  <tr>
+                    <td>RF08</td>
+                    <td>Exibir preview de links e fontes consultadas.</td>
+                    <td>/api/link-preview e feature de link preview no content script.</td>
+                  </tr>
+                  <tr>
+                    <td>RF09</td>
+                    <td>Permitir consulta detalhada de uma analise publicada.</td>
+                    <td>/api/analises/detalhe e modal do site publico.</td>
+                  </tr>
+                  <tr>
+                    <td>RF10</td>
+                    <td>Enviar e-mail de recuperacao de senha.</td>
+                    <td>Nodemailer, tokens_recuperacao e fluxo de redefinicao.</td>
+                  </tr>
+                  <tr>
+                    <td>RF11</td>
+                    <td>Classificar fontes e entidades mencionadas no resultado.</td>
+                    <td>Normalizacao em montarAnalisePublica e buildFinal.</td>
+                  </tr>
+                  <tr>
+                    <td>RF12</td>
+                    <td>Filtrar o acervo publico por texto, data, fonte e veredito.</td>
+                    <td>public/app.js com filtros locais sobre /api/analises.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </article>
+
+            <article>
+              <h3>Requisitos nao funcionais</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Codigo</th>
+                    <th>Descricao</th>
+                    <th>Evidencia no projeto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>RNF01</td>
+                    <td>Usabilidade e feedback durante operacoes longas.</td>
+                    <td>Popup de progresso com etapas reais do pipeline.</td>
+                  </tr>
+                  <tr>
+                    <td>RNF02</td>
+                    <td>Acessibilidade visual e leitura assistida.</td>
+                    <td>Tema escuro, alto contraste, tamanho de texto e leitor.</td>
+                  </tr>
+                  <tr>
+                    <td>RNF03</td>
+                    <td>Seguranca basica de credenciais.</td>
+                    <td>bcrypt para senhas e chave admin via variavel de ambiente.</td>
+                  </tr>
+                  <tr>
+                    <td>RNF04</td>
+                    <td>Persistencia local simples.</td>
+                    <td>SQLite em usuarios.db com cache e historico.</td>
+                  </tr>
+                  <tr>
+                    <td>RNF05</td>
+                    <td>Compatibilidade com navegador moderno.</td>
+                    <td>Chrome Extension Manifest V3 e content scripts.</td>
+                  </tr>
+                  <tr>
+                    <td>RNF06</td>
+                    <td>Resiliencia em tarefas demoradas.</td>
+                    <td>Jobs em memoria com TTL e consulta periodica de status.</td>
+                  </tr>
+                  <tr>
+                    <td>RNF07</td>
+                    <td>Manutenibilidade dos servicos de IA.</td>
+                    <td>Etapas separadas em arquivos de ai-services.</td>
+                  </tr>
+                  <tr>
+                    <td>RNF08</td>
+                    <td>Privacidade minima no navegador.</td>
+                    <td>Captura limitada ao payload necessario para analise.</td>
+                  </tr>
+                  <tr>
+                    <td>RNF09</td>
+                    <td>Observabilidade basica durante desenvolvimento.</td>
+                    <td>Logs de servidor por etapa do pipeline.</td>
+                  </tr>
+                  <tr>
+                    <td>RNF10</td>
+                    <td>Compatibilidade visual com tema claro e escuro.</td>
+                    <td>Variaveis CSS, toggles e preferencias persistentes.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="casos-de-uso" data-title="Casos de uso">
+          <div class="section-heading">
+            <p class="eyebrow">UML textual</p>
+            <h2>Casos de uso principais</h2>
+          </div>
+
+          <div class="use-cases">
+            <article>
+              <span>UC01</span>
+              <h3>Entrar na extensao</h3>
+              <p>Usuario informa e-mail e senha ou usa login Google para liberar historico e chat.</p>
+            </article>
+            <article>
+              <span>UC02</span>
+              <h3>Analisar noticia</h3>
+              <p>Usuario clica em Analisar, acompanha o progresso e recebe o resultado no sidebar.</p>
+            </article>
+            <article>
+              <span>UC03</span>
+              <h3>Consultar acervo</h3>
+              <p>Usuario acessa o site publico, filtra por veredito, fonte, data e abre detalhes.</p>
+            </article>
+            <article>
+              <span>UC04</span>
+              <h3>Conversar com o chat</h3>
+              <p>Usuario autenticado pergunta sobre noticias e pode reabrir conversas anteriores.</p>
+            </article>
+            <article>
+              <span>UC05</span>
+              <h3>Ajustar acessibilidade</h3>
+              <p>Usuario muda tema, contraste, tamanho de fonte e leitor de noticia.</p>
+            </article>
+            <article>
+              <span>UC06</span>
+              <h3>Administrar analises</h3>
+              <p>Administrador remove uma analise publicada usando URL e chave administrativa.</p>
+            </article>
+          </div>
+
+          <div class="use-case-details">
+            <article>
+              <h3>UC02 - Analisar noticia</h3>
+              <dl>
+                <div><dt>Ator principal</dt><dd>Usuario leitor da pagina.</dd></div>
+                <div><dt>Pre-condicao</dt><dd>Extensao carregada e servidor local disponivel.</dd></div>
+                <div><dt>Fluxo principal</dt><dd>Clicar em Analisar, extrair payload, iniciar job, consultar progresso, renderizar sidebar.</dd></div>
+                <div><dt>Pos-condicao</dt><dd>Resultado aparece no painel e pode ser salvo no cache publico.</dd></div>
+                <div><dt>Excecao</dt><dd>Se o servidor falhar, popup informa erro e o botao volta ao estado inicial.</dd></div>
+              </dl>
+            </article>
+            <article>
+              <h3>UC04 - Conversar com o chat</h3>
+              <dl>
+                <div><dt>Ator principal</dt><dd>Usuario autenticado.</dd></div>
+                <div><dt>Pre-condicao</dt><dd>Login realizado e contexto da pagina disponivel.</dd></div>
+                <div><dt>Fluxo principal</dt><dd>Enviar pergunta, chamar /chat/noticias, receber resposta e salvar historico.</dd></div>
+                <div><dt>Pos-condicao</dt><dd>Conversa fica acessivel no painel de historico.</dd></div>
+                <div><dt>Excecao</dt><dd>Sem login, o popup interno de autenticacao e exibido.</dd></div>
+              </dl>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="fluxos" data-title="Fluxos do sistema">
+          <div class="section-heading">
+            <p class="eyebrow">Fluxos operacionais</p>
+            <h2>Passo a passo dos principais processos</h2>
+            <p>
+              Os fluxos abaixo funcionam como diagramas de atividade em texto,
+              mantendo a documentacao legivel dentro do site.
+            </p>
+          </div>
+
+          <div class="flow-list">
+            <article>
+              <h3>Fluxo de analise de noticia</h3>
+              <ol class="sequence-flow">
+                <li>Usuario acessa uma pagina de noticia.</li>
+                <li>Content script injeta botoes Analisar e Chat.</li>
+                <li>PageExtractor captura URL, titulo, texto, links, autor, data e metadados.</li>
+                <li>Background envia o payload para /analisar/start.</li>
+                <li>Servidor cria job, executa runPipeline e atualiza progresso.</li>
+                <li>Extensao consulta /analisar/status/:jobId ate concluir.</li>
+                <li>Sidebar renderiza buildFinal com resumo, veredito, score, claims e fontes.</li>
+              </ol>
+            </article>
+            <article>
+              <h3>Fluxo do site publico</h3>
+              <ol class="sequence-flow">
+                <li>Usuario abre /site.</li>
+                <li>public/app.js busca /api/analises com limite de 500 registros.</li>
+                <li>Analises sao normalizadas para campos de titulo, resumo, data, fonte e veredito.</li>
+                <li>Filtros locais alteram lista por busca, data, fonte, veredito e ordenacao.</li>
+                <li>Ao abrir um card, /api/analises/detalhe busca o resultado completo.</li>
+                <li>Modal apresenta claims, fontes consultadas, entidades e score.</li>
+              </ol>
+            </article>
+            <article>
+              <h3>Fluxo de autenticacao</h3>
+              <ol class="sequence-flow">
+                <li>Usuario envia e-mail e senha pela tela de login ou popup interno.</li>
+                <li>Servidor busca usuario em SQLite e compara hash com bcrypt.</li>
+                <li>Extensao guarda estado de login, e-mail, nome e configuracoes no chrome.storage.</li>
+                <li>Configuracoes podem ser sincronizadas com /salvar-configs.</li>
+                <li>Recuperacao de senha gera token, envia e-mail e valida expiracao antes de trocar senha.</li>
+              </ol>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="arquitetura" data-title="Arquitetura">
+          <div class="section-heading">
+            <p class="eyebrow">Camadas</p>
+            <h2>Arquitetura do sistema</h2>
+            <p>
+              O projeto combina content scripts da extensao, service worker,
+              API Node/Express, banco SQLite, servicos de IA e site publico.
+            </p>
+          </div>
+
+          <div class="architecture-map">
+            <article>
+              <span>Navegador</span>
+              <strong>Content scripts</strong>
+              <p>Botao, extrator de pagina, sidebar, chat, link preview e acessibilidade.</p>
+            </article>
+            <div class="connector" aria-hidden="true"></div>
+            <article>
+              <span>Servidor</span>
+              <strong>Express API</strong>
+              <p>Autenticacao, jobs de analise, cache publico, chat e previews.</p>
+            </article>
+            <div class="connector" aria-hidden="true"></div>
+            <article>
+              <span>Dados e IA</span>
+              <strong>SQLite + OpenAI</strong>
+              <p>Usuarios, tokens, analises, historico e chamadas ao pipeline.</p>
+            </article>
+          </div>
+
+          <div class="module-grid">
+            <article>
+              <h3>Extensao</h3>
+              <p>manifest.json registra permissoes, scripts de conteudo, service worker e popup de login.</p>
+            </article>
+            <article>
+              <h3>Servidor</h3>
+              <p>src/server/server.js centraliza rotas, banco, jobs assíncronos e site estatico.</p>
+            </article>
+            <article>
+              <h3>Publicacao</h3>
+              <p>public/ renderiza o banco publico de analises com filtros, modais e painel admin.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="componentes" data-title="Componentes">
+          <div class="section-heading">
+            <p class="eyebrow">Responsabilidades internas</p>
+            <h2>Componentes e arquivos principais</h2>
+            <p>
+              Esta tabela conecta a arquitetura aos arquivos do repositorio,
+              facilitando a apresentacao tecnica e a manutencao futura.
+            </p>
+          </div>
+
+          <div class="component-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Camada</th>
+                  <th>Arquivo ou pasta</th>
+                  <th>Responsabilidade</th>
+                  <th>Observacoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Manifest</td>
+                  <td>manifest.json</td>
+                  <td>Define nome, versao, permissoes, content scripts, service worker e popup.</td>
+                  <td>Usa Manifest V3 e host_permissions para paginas e APIs locais.</td>
+                </tr>
+                <tr>
+                  <td>Content</td>
+                  <td>src/content/content.js</td>
+                  <td>Inicializa a extensao na pagina e observa mudancas no DOM.</td>
+                  <td>Possui guard para evitar inicializacao duplicada.</td>
+                </tr>
+                <tr>
+                  <td>Extracao</td>
+                  <td>src/content/services/extractor.js</td>
+                  <td>Coleta texto principal, metadados, links e estrategias por site.</td>
+                  <td>Inclui tratamentos para YouTube, X/Twitter, Instagram e Reddit.</td>
+                </tr>
+                <tr>
+                  <td>UI da extensao</td>
+                  <td>src/content/ui/sidebar.js</td>
+                  <td>Renderiza painel lateral, resultado final, menu e configuracoes.</td>
+                  <td>Usa Shadow DOM para isolar estilos da pagina visitada.</td>
+                </tr>
+                <tr>
+                  <td>Servidor</td>
+                  <td>src/server/server.js</td>
+                  <td>Centraliza rotas HTTP, banco, jobs, auth, chat, site e APIs publicas.</td>
+                  <td>Tambem faz migracoes simples de colunas SQLite.</td>
+                </tr>
+                <tr>
+                  <td>Pipeline</td>
+                  <td>src/server/services/runPipeline.js</td>
+                  <td>Orquestra as 10 etapas de verificacao e envia progresso.</td>
+                  <td>Integra classificacao, claims, buscas, fontes oficiais e build final.</td>
+                </tr>
+                <tr>
+                  <td>Site publico</td>
+                  <td>public/app.js</td>
+                  <td>Busca analises, aplica filtros, pagina resultados e abre modal detalhado.</td>
+                  <td>Usa a API publica do proprio servidor Express.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="pipeline" data-title="Pipeline">
+          <div class="section-heading">
+            <p class="eyebrow">Processamento</p>
+            <h2>Pipeline de analise em 10 etapas</h2>
+          </div>
+
+          <ol class="pipeline">
+            <li><strong>Classificar pagina</strong><span>Confirma se o conteudo principal e noticia.</span></li>
+            <li><strong>Extrair claims</strong><span>Seleciona afirmacoes verificaveis do texto.</span></li>
+            <li><strong>Detectar tipo</strong><span>Identifica datas, numeros, instituicoes, locais e prioridade.</span></li>
+            <li><strong>Gerar consultas</strong><span>Cria buscas especificas para cada claim.</span></li>
+            <li><strong>Selecionar candidatos</strong><span>Escolhe links e fontes com potencial de evidencia.</span></li>
+            <li><strong>Verificar candidatos</strong><span>Compara candidatos com as claims extraidas.</span></li>
+            <li><strong>Rotear evidencias</strong><span>Define se precisa de API, fonte oficial ou contexto.</span></li>
+            <li><strong>Consultar fontes oficiais</strong><span>Usa fontes institucionais quando necessario.</span></li>
+            <li><strong>Revisar resultado</strong><span>Consolida veredito, confianca e alertas.</span></li>
+            <li><strong>Montar build final</strong><span>Prepara o JSON usado pelo painel e pelo site.</span></li>
+          </ol>
+
+          <div class="pipeline-contract">
+            <article>
+              <h3>Entrada do pipeline</h3>
+              <p>
+                O payload vem do navegador e costuma conter URL, dominio, titulo,
+                descricao, siteName, autor, data de publicacao, tipo da pagina,
+                idioma, texto principal, headings e links. O servidor valida pelo
+                menos a existencia de pageData.url.
+              </p>
+            </article>
+            <article>
+              <h3>Saida esperada</h3>
+              <p>
+                O build final deve reunir vereditoGeral, scoreConfiabilidade,
+                nivelConfiabilidade, mensagemPrincipalUsuario, resumoCurto,
+                claimsAnalisadas, fontesPrincipais, entidadesMencionadas,
+                alertasGerais e textoFinalSemHtml.
+              </p>
+            </article>
+            <article>
+              <h3>Estados do job</h3>
+              <p>
+                processing indica analise em andamento, done retorna resultado e
+                publicacao, error devolve a mensagem de falha, not_found indica
+                job inexistente ou expirado pelo TTL.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="dados" data-title="Dados">
+          <div class="section-heading">
+            <p class="eyebrow">Modelo de dados</p>
+            <h2>Tabelas SQLite</h2>
+          </div>
+
+          <div class="data-model">
+            <article>
+              <h3>usuarios</h3>
+              <p>id, email, senha, nome, configs, criado_em.</p>
+            </article>
+            <article>
+              <h3>tokens_recuperacao</h3>
+              <p>email, token, expira_em, usado e criado_em para redefinicao de senha.</p>
+            </article>
+            <article>
+              <h3>cache_analises</h3>
+              <p>url, titulo, veredicto, score, fontes_consultadas, entidades, resultado.</p>
+            </article>
+            <article>
+              <h3>chat_historico</h3>
+              <p>email, url, titulo, pergunta, resposta e criado_em.</p>
+            </article>
+          </div>
+
+          <div class="data-lifecycle">
+            <article>
+              <h3>Ciclo de vida da analise</h3>
+              <p>
+                A analise nasce como payload extraido da pagina, passa pelo
+                pipeline, e quando existe buildFinal e salva em cache_analises.
+                O site publico le essa tabela e transforma o JSON em campos
+                amigaveis para filtro e exibicao.
+              </p>
+            </article>
+            <article>
+              <h3>Normalizacao publica</h3>
+              <p>
+                montarAnalisePublica transforma dados internos em title, summary,
+                veracity, score, sources, fontesConsultadas, entidadesMencionadas,
+                date e publishedDate. Isso separa o contrato publico do formato
+                bruto retornado pela IA.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="api" data-title="API">
+          <div class="section-heading">
+            <p class="eyebrow">Contratos</p>
+            <h2>Principais endpoints</h2>
+          </div>
+
+          <div class="endpoint-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Metodo</th>
+                  <th>Rota</th>
+                  <th>Responsabilidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>POST</td><td>/register</td><td>Criar usuario com senha criptografada.</td></tr>
+                <tr><td>POST</td><td>/login</td><td>Autenticar usuario por e-mail e senha.</td></tr>
+                <tr><td>POST</td><td>/analisar/start</td><td>Iniciar job assíncrono de analise.</td></tr>
+                <tr><td>GET</td><td>/analisar/status/:jobId</td><td>Consultar progresso e resultado do job.</td></tr>
+                <tr><td>POST</td><td>/chat/noticias</td><td>Responder perguntas sobre noticias.</td></tr>
+                <tr><td>GET</td><td>/api/analises</td><td>Listar analises publicadas.</td></tr>
+                <tr><td>GET</td><td>/api/analises/detalhe</td><td>Retornar resultado completo de uma analise.</td></tr>
+                <tr><td>DELETE</td><td>/api/analises</td><td>Remover analise usando chave admin.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="contratos" data-title="Contratos de dados">
+          <div class="section-heading">
+            <p class="eyebrow">Payloads e respostas</p>
+            <h2>Contratos importantes para integracao</h2>
+            <p>
+              A documentacao abaixo resume os formatos mais relevantes para
+              testar e explicar a comunicacao entre extensao, servidor e site.
+            </p>
+          </div>
+
+          <div class="contract-grid">
+            <article>
+              <h3>POST /analisar/start</h3>
+              <pre><code>{
+  "url": "https://site.com/noticia",
+  "title": "Titulo da noticia",
+  "text": "Texto capturado...",
+  "domain": "site.com",
+  "publishDate": "2026-05-27"
+}</code></pre>
+              <p>Retorna status 202 com jobId, startedAt e progresso inicial.</p>
+            </article>
+            <article>
+              <h3>GET /analisar/status/:jobId</h3>
+              <pre><code>{
+  "ok": true,
+  "status": "processing",
+  "progress": {
+    "stage": 4,
+    "totalStages": 10,
+    "label": "Gerando consultas"
+  }
+}</code></pre>
+              <p>Quando status for done, inclui resultado e dados de publicacao.</p>
+            </article>
+            <article>
+              <h3>GET /api/analises</h3>
+              <pre><code>{
+  "total": 12,
+  "paginas": 1,
+  "analises": [
+    {
+      "url": "...",
+      "title": "...",
+      "veracity": "mixed",
+      "score": 74
+    }
+  ]
+}</code></pre>
+              <p>Usado pelo site publico para renderizar cards e estatisticas.</p>
+            </article>
+            <article>
+              <h3>POST /chat/noticias</h3>
+              <pre><code>{
+  "pergunta": "O que foi confirmado?",
+  "email": "usuario@email.com",
+  "page": {
+    "url": "...",
+    "title": "...",
+    "text": "..."
+  }
+}</code></pre>
+              <p>Retorna resposta em HTML/texto seguro para ser exibido no painel.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="interfaces" data-title="Interfaces">
+          <div class="section-heading">
+            <p class="eyebrow">Prototipos implementados</p>
+            <h2>Telas e experiencias</h2>
+          </div>
+
+          <div class="interface-grid">
+            <article>
+              <div class="screen login-screen">
+                <span></span><span></span><span></span>
+              </div>
+              <h3>Login e cadastro</h3>
+              <p>Fluxo de entrada, criacao de conta, recuperacao de senha e Google OAuth.</p>
+            </article>
+            <article>
+              <div class="screen sidebar-screen">
+                <span></span><span></span><span></span>
+              </div>
+              <h3>Sidebar da extensao</h3>
+              <p>Resultado da analise, chat, historico, configuracoes e acessibilidade.</p>
+            </article>
+            <article>
+              <div class="screen site-screen">
+                <span></span><span></span><span></span>
+              </div>
+              <h3>Site publico</h3>
+              <p>Catalogo de noticias verificadas com filtros, estatisticas e modal detalhado.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="regras" data-title="Regras de negocio">
+          <div class="section-heading">
+            <p class="eyebrow">Regras e validacoes</p>
+            <h2>Comportamentos que governam o sistema</h2>
+          </div>
+
+          <div class="rules-grid">
+            <article>
+              <span>RN01</span>
+              <h3>Pagina precisa ter URL</h3>
+              <p>O servidor rejeita analises sem pageData.url, pois a URL e a chave de rastreio e cache.</p>
+            </article>
+            <article>
+              <span>RN02</span>
+              <h3>Nem toda pagina e analisada</h3>
+              <p>Se classifyPage indicar que o conteudo principal nao e noticia, o pipeline encerra com status ignorado.</p>
+            </article>
+            <article>
+              <span>RN03</span>
+              <h3>Jobs expiram</h3>
+              <p>Jobs de analise ficam em memoria e sao removidos apos o TTL definido no servidor.</p>
+            </article>
+            <article>
+              <span>RN04</span>
+              <h3>Historico exige usuario</h3>
+              <p>O chat solicita login antes de enviar perguntas e salvar historico no servidor.</p>
+            </article>
+            <article>
+              <span>RN05</span>
+              <h3>Cache usa URL como chave</h3>
+              <p>Analises novas sobrescrevem a entrada existente da mesma URL em cache_analises.</p>
+            </article>
+            <article>
+              <span>RN06</span>
+              <h3>Remocao exige chave admin</h3>
+              <p>A rota DELETE /api/analises compara adminKey com ADMIN_KEY do ambiente.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="execucao" data-title="Execucao">
+          <div class="section-heading">
+            <p class="eyebrow">Como rodar</p>
+            <h2>Execucao local e configuracao</h2>
+          </div>
+
+          <div class="runbook">
+            <article>
+              <h3>Servidor</h3>
+              <pre><code>npm install
+npm start</code></pre>
+              <p>O servidor sobe em http://localhost:3000 e publica o site em /site.</p>
+            </article>
+            <article>
+              <h3>Extensao</h3>
+              <pre><code>chrome://extensions
+Modo desenvolvedor
+Carregar sem compactacao</code></pre>
+              <p>Selecione a pasta raiz do projeto para carregar o Manifest V3.</p>
+            </article>
+            <article>
+              <h3>Ambiente</h3>
+              <pre><code>OPENAI_API_KEY=...
+ADMIN_KEY=...
+EMAIL_USER=...
+EMAIL_PASS=...</code></pre>
+              <p>As variaveis ficam em .env e sao usadas pelo servidor Node.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="qualidade" data-title="Qualidade">
+          <div class="section-heading">
+            <p class="eyebrow">Testes e riscos</p>
+            <h2>Qualidade, validacao e criterios de aceite</h2>
+            <p>
+              Esta secao registra como o projeto pode ser verificado antes da
+              apresentacao e quais pontos exigem cuidado por dependerem de rede,
+              IA generativa ou configuracao local.
+            </p>
+          </div>
+
+          <div class="quality-grid">
+            <article>
+              <h3>Testes manuais essenciais</h3>
+              <ul>
+                <li>Cadastrar usuario, entrar, sair e recuperar senha.</li>
+                <li>Carregar a extensao pelo modo desenvolvedor do Chrome.</li>
+                <li>Analisar uma noticia real e acompanhar todas as etapas do job.</li>
+                <li>Abrir o sidebar, conferir veredito, score, claims e fontes.</li>
+                <li>Usar chat autenticado e reabrir historico da conversa.</li>
+                <li>Filtrar o acervo publico e abrir o detalhe de uma analise.</li>
+              </ul>
+            </article>
+            <article>
+              <h3>Testes de codigo existentes</h3>
+              <ul>
+                <li>test-normalize.js valida normalizacao de claims.</li>
+                <li>test-readWebEvidence.js exercita leitura de evidencias web.</li>
+                <li>test-websearchcandidates.js testa payload de candidatos de busca.</li>
+                <li>src/server/test/testClassifyPage.js valida classificacao de pagina.</li>
+              </ul>
+            </article>
+            <article>
+              <h3>Riscos tecnicos</h3>
+              <ul>
+                <li>Servicos externos podem falhar, mudar resposta ou demorar.</li>
+                <li>Jobs ficam em memoria; reiniciar o servidor apaga jobs em andamento.</li>
+                <li>Cache por URL pode sobrescrever uma analise anterior da mesma pagina.</li>
+                <li>Prompts de IA precisam manter contratos JSON estaveis.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="acceptance-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Criterio</th>
+                  <th>Como validar</th>
+                  <th>Resultado esperado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Analise completa</td>
+                  <td>Executar /analisar/start e consultar /analisar/status/:jobId.</td>
+                  <td>Status done com build final, veredito, score, claims e fontes.</td>
+                </tr>
+                <tr>
+                  <td>Publicacao</td>
+                  <td>Abrir /site depois de concluir uma analise.</td>
+                  <td>Card aparece no acervo e detalhe retorna o JSON completo.</td>
+                </tr>
+                <tr>
+                  <td>Autenticacao</td>
+                  <td>Usar telas de login, cadastro e recuperacao.</td>
+                  <td>Mensagens claras, senha com hash e configs carregadas.</td>
+                </tr>
+                <tr>
+                  <td>Acessibilidade</td>
+                  <td>Alternar tema, contraste, tamanho de fonte e leitor.</td>
+                  <td>Preferencias persistem e a interface continua legivel.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="planejamento" data-title="Planejamento">
+          <div class="section-heading">
+            <p class="eyebrow">Entrega final</p>
+            <h2>Planejamento e criterios de avaliacao</h2>
+          </div>
+
+          <div class="planning-grid">
+            <article>
+              <h3>Etapas sugeridas</h3>
+              <ol>
+                <li>Validar requisitos com usuarios leitores.</li>
+                <li>Fortalecer testes do pipeline e rotas publicas.</li>
+                <li>Revisar prompts e contratos de JSON das IAs.</li>
+                <li>Publicar versao empacotada da extensao.</li>
+                <li>Apresentar diagramas, telas e demonstracao do fluxo.</li>
+              </ol>
+            </article>
+            <article>
+              <h3>Criterios alinhados ao PDF</h3>
+              <ul>
+                <li>Clareza do problema e dos objetivos.</li>
+                <li>Qualidade dos requisitos e casos de uso.</li>
+                <li>Consistencia da arquitetura com o codigo implementado.</li>
+                <li>Organizacao da documentacao e qualidade visual dos prototipos.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="doc-section" id="glossario" data-title="Glossario">
+          <div class="section-heading">
+            <p class="eyebrow">Termos do projeto</p>
+            <h2>Glossario tecnico</h2>
+            <p>
+              Termos usados na documentacao, no codigo e na apresentacao para
+              alinhar a linguagem entre equipe, professor e avaliadores.
+            </p>
+          </div>
+
+          <div class="glossary-grid">
+            <article>
+              <strong>Claim</strong>
+              <p>Afirmacao verificavel extraida da noticia.</p>
+            </article>
+            <article>
+              <strong>Evidencia</strong>
+              <p>Informacao externa usada para confirmar, negar ou contextualizar uma claim.</p>
+            </article>
+            <article>
+              <strong>Fonte oficial</strong>
+              <p>Instituicao, orgao publico ou base primaria usada como referencia confiavel.</p>
+            </article>
+            <article>
+              <strong>Veredito</strong>
+              <p>Classificacao final da confiabilidade percebida da noticia.</p>
+            </article>
+            <article>
+              <strong>Score</strong>
+              <p>Valor numerico que resume o nivel de confianca do resultado.</p>
+            </article>
+            <article>
+              <strong>Build final</strong>
+              <p>JSON consolidado usado pela extensao e pelo site publico.</p>
+            </article>
+            <article>
+              <strong>Content script</strong>
+              <p>Script da extensao executado dentro da pagina visitada.</p>
+            </article>
+            <article>
+              <strong>Service worker</strong>
+              <p>Processo em segundo plano da extensao Manifest V3.</p>
+            </article>
+            <article>
+              <strong>Job</strong>
+              <p>Processamento assíncrono criado para acompanhar uma analise longa.</p>
+            </article>
+            <article>
+              <strong>Cache de analises</strong>
+              <p>Tabela SQLite que guarda resultados ja processados por URL.</p>
+            </article>
+            <article>
+              <strong>Shadow DOM</strong>
+              <p>Isolamento usado pelo sidebar para evitar conflito com CSS da pagina.</p>
+            </article>
+            <article>
+              <strong>Payload</strong>
+              <p>Conjunto de dados enviado entre extensao, servidor, IA e site.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="docs.js"></script>
+  </body>
+</html>

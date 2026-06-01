@@ -100,7 +100,7 @@ async function webSearchCandidates(
     body: JSON.stringify({
       prompt: {
         id: process.env.OPENAI_WEB_SEARCH_CANDIDATES_PROMPT_ID,
-        version: "4",
+        version: "9",
         variables: {
           url: contextoNoticia.url || "",
           veiculo: contextoNoticia.veiculo || "",

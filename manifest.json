@@ -4,6 +4,12 @@
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlesSJXn3r7XGL2U9RszlqeVnNOQZbN+HpNJ/O8hDeX8/3by3N/ZAcJb6kojuEDhoL0w2mnsjnmXsoh9pMt6Pi1ybkTSxykECLAxFgNuCNtT7VRf3otE55GrgYmSzi8a/quxK30WzoDNfT/GsGq6AcEztL687asGxvp+/UAiX47ylly4lWRfozChAPs43HtsXBbyhngQ1vjn+VhBuNcqdbSQbqruxzmbjX4gE239cqq4Vhk0e9VFUi3jHP9phP4VpJFJpoQKlJcUEfUvvL9EwnRQNkcQ7WXuSQJmcANwMg5u0PavlzG4l+KYSk26HHQY+fjkbgFvVm82ysNB1GZcICQIDAQAB",
   "version": "3.5.0",
   "description": "Analise de Noticias",
+  "icons": {
+    "16": "assets/icons/IconVerusAi.png",
+    "32": "assets/icons/IconVerusAi.png",
+    "48": "assets/icons/IconVerusAi.png",
+    "128": "assets/icons/IconVerusAi.png"
+  },
   "permissions": ["storage", "identity", "activeTab"],
   "oauth2": {
     "client_id": "166919224714-251qg7q1abh1h3nenmvekh5agr5ojldv.apps.googleusercontent.com",
@@ -35,7 +41,9 @@
         "src/content/state.js",
         "src/content/features/reader.js",
         "src/content/features/configs.js",
+        "src/content/features/link-preview.js",
         "src/content/ui/popup-login.js",
+        "src/content/chat/chat.js",
         "src/content/ui/sidebar.js",
         "src/content/ui/button.js",
         "src/content/content.js"
@@ -48,6 +56,12 @@
   },
   "action": {
     "default_title": "Analiser FakeNews",
-    "default_popup": "src/pages/login/login.html"
+    "default_popup": "src/pages/login/login.html",
+    "default_icon": {
+      "16": "assets/icons/IconVerusAi.png",
+      "32": "assets/icons/IconVerusAi.png",
+      "48": "assets/icons/IconVerusAi.png",
+      "128": "assets/icons/IconVerusAi.png"
+    }
   }
 }

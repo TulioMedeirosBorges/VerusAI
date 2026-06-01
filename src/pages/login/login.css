@@ -1,140 +1,186 @@
-* {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 :root {
-  --bg: #ffffff;
-  --bg-input: #f0f0f0;
-  --bg-secondary: #f8f8f8;
-  --texto: #000000;
-  --texto-secundario: #888888;
-  --borda: #dddddd;
-  --borda-input: rgb(117, 117, 117);
-  --link-color: #888888;
-  --link-hover: #f1ae2b;
-  --btn-bg: #000000;
-  --btn-hover: #333333;
-  --erro: #dc3545;
+  --ink: #171715;
+  --cream: #f4ecdf;
+  --paper: #f9f4eb;
+  --cream-dim: #e8dccb;
+  --red: #d3392d;
+  --red-dim: #a82921;
+  --blue: #02519b;
+  --green: #1a7a3c;
+  --warning: #b07800;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: Georgia, "Times New Roman", serif;
+  --font-mono: "Courier New", monospace;
+  --shadow-card: 4px 4px 0 rgba(23, 23, 21, 0.16),
+    0 18px 42px rgba(23, 23, 21, 0.24);
 }
 
 html,
 body {
-  background-color: var(--bg);
-  color: var(--texto);
-  min-width: 70vh;
-  transition:
-    background-color 0.3s,
-    color 0.3s;
+  width: 360px;
+  min-height: 500px;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.45;
 }
 
-/* ── Header ── */
+body {
+  overflow: auto;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
 #headerPage {
-  padding: 16px 20px 0;
+  background: var(--ink);
+  border-bottom: 4px solid var(--red);
+  color: var(--cream);
+  padding: 12px 14px;
 }
 
 .header {
+  align-items: center;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  gap: 12px;
 }
 
 #logo {
-  width: 120px;
-  height: 40px;
+  display: block;
+  width: 122px;
+  height: 42px;
   object-fit: contain;
 }
 
+.menu,
 #closeIcon {
-  cursor: pointer;
-  opacity: 0.5;
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
 }
 
-#closeIcon img {
-  width: 16px;
-  height: 16px;
+#closeIcon {
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid rgba(244, 236, 223, 0.48);
+  background: rgba(244, 236, 223, 0.08);
+  color: var(--cream);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
-/* ── Container principal ── */
+#closeIcon:hover {
+  background: var(--red);
+  border-color: var(--red);
+  transform: translateY(-1px);
+}
+
+#closeIcon img,
+.icon-close {
+  width: 15px;
+  height: 15px;
+  filter: invert(94%) sepia(12%) saturate(342%) hue-rotate(345deg)
+    brightness(104%) contrast(92%);
+}
+
 main {
   display: flex;
   justify-content: center;
-  padding: 16px 20px 20px;
+  padding: 18px 18px 20px;
 }
 
 .main {
   width: 100%;
-  max-width: 280px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
-/* ── Logo centralizada ── */
-.login_popup_logo {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 4px;
-}
-
-.login_popup_logo img {
-  width: 140px;
-  height: 40px;
-  object-fit: contain;
-}
-
-/* ── Inputs ── */
-.input {
+.input,
+.recuperacao {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 10px;
 }
 
 .E-mail,
 .Senha {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--texto);
+label,
+.login_popup_label {
+  color: rgba(23, 23, 21, 0.68);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 input[type="email"],
 input[type="password"],
 input[type="text"] {
   width: 100%;
-  border: solid 0.1px var(--borda-input);
-  border-radius: 8px;
-  padding: 8px 10px;
-  background: var(--bg-input);
+  min-height: 42px;
+  border: 1.5px solid var(--ink);
+  border-radius: 2px;
+  background: rgba(249, 244, 235, 0.92);
+  color: var(--ink);
+  font-family: var(--font-mono);
   font-size: 13px;
   outline: none;
-  color: var(--texto);
-  transition: border-color 0.2s;
+  padding: 9px 10px;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+input::placeholder {
+  color: rgba(23, 23, 21, 0.45);
 }
 
 input:focus {
-  border-color: var(--texto);
+  background: var(--paper);
+  border-color: var(--red);
+  box-shadow: 3px 3px 0 rgba(211, 57, 45, 0.22);
 }
 
 input.input-erro {
-  border: 1px solid var(--erro) !important;
+  border-color: var(--red) !important;
+  box-shadow: 3px 3px 0 rgba(211, 57, 45, 0.18);
 }
 
-/* ── Erros ── */
 .erro {
-  color: var(--erro);
-  font-size: 11px;
+  min-height: 14px;
+  color: var(--red);
   display: flex;
   align-items: center;
   gap: 4px;
-  min-height: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.25;
 }
 
 .icon-warning {
@@ -142,25 +188,32 @@ input.input-erro {
   height: 12px;
 }
 
-/* ── Esqueci a senha ── */
 .esqueci_senha {
   text-align: right;
 }
 
 .esqueci_senha a,
-#linkEsqueciSenha {
-  font-size: 12px;
-  color: var(--link-color);
-  text-decoration: none;
+#linkEsqueciSenha,
+#voltarLogin,
+#voltarLogin2,
+#reenviarCodigo {
+  color: rgba(23, 23, 21, 0.6) !important;
   cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px !important;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-decoration: none !important;
 }
 
 .esqueci_senha a:hover,
-#linkEsqueciSenha:hover {
-  color: var(--link-hover);
+#linkEsqueciSenha:hover,
+#voltarLogin:hover,
+#voltarLogin2:hover,
+#reenviarCodigo:hover {
+  color: var(--red) !important;
 }
 
-/* ── Botões ── */
 .button {
   display: flex;
   flex-direction: column;
@@ -172,100 +225,117 @@ input.input-erro {
 #btnRedefinirSenha,
 #btnVoltarLogin {
   width: 100%;
-  background: var(--btn-bg);
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.2s;
+  min-height: 42px;
+  border: 2px solid var(--red);
+  border-radius: 2px;
+  background: var(--red);
+  color: var(--cream);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 9px 12px;
+  text-transform: uppercase;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .buttonConfirm #confirm:hover,
 #btnEnviarCodigo:hover,
 #btnRedefinirSenha:hover,
 #btnVoltarLogin:hover {
-  background: var(--btn-hover);
+  background: var(--ink);
+  border-color: var(--ink);
+  box-shadow: 3px 3px 0 rgba(23, 23, 21, 0.16);
+  transform: translateY(-1px);
 }
 
-/* ── Google ── */
+button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+  transform: none !important;
+}
+
 .googleButton {
   width: 100%;
 }
 
 .google {
-  display: flex;
   align-items: center;
+  display: flex;
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid var(--borda);
-  background: var(--bg-secondary);
-  color: var(--texto);
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.2s;
+  min-height: 40px;
+  border: 1.5px solid var(--ink);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .google:hover {
-  background: var(--bg-input);
+  background: var(--blue);
+  border-color: var(--blue);
+  color: var(--cream);
+  transform: translateY(-1px);
 }
 
-#googleIcon img {
+#googleIcon img,
+.icon-google {
   width: 15px;
   height: 15px;
 }
 
-/* ── Links de cadastro ── */
 .logup p,
 .logup a {
-  font-size: 12px;
-  color: var(--texto-secundario);
+  color: rgba(23, 23, 21, 0.58);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
   text-align: center;
 }
 
 .logup a {
-  color: var(--link-hover);
-  font-weight: 600;
+  color: var(--red);
+  font-weight: 800;
   text-decoration: none;
 }
 
-/* ── Recuperação de senha ── */
 .recuperacao {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  border: 2px solid var(--ink);
+  border-top: 5px solid var(--red);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+  padding: 14px;
 }
 
 .recuperacao h2 {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--texto);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.1;
 }
 
 .subtitulo {
+  color: rgba(23, 23, 21, 0.62);
   font-size: 12px;
-  color: var(--texto-secundario);
+  line-height: 1.45;
 }
 
-#voltarLogin,
-#voltarLogin2 {
-  font-size: 11px;
-  color: var(--link-color);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-#voltarLogin:hover,
-#voltarLogin2:hover {
-  color: var(--texto);
-}
-
-/* ── Força da senha ── */
 .senha-forca {
   display: flex;
   gap: 4px;
@@ -274,25 +344,37 @@ input.input-erro {
 
 .senha-forca-barra {
   flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: #e0e0e0;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--cream-dim);
   transition: background 0.3s;
 }
 
 .senha-forca-barra.ativa-fraca {
-  background: #dc3545;
+  background: var(--red);
 }
+
 .senha-forca-barra.ativa-media {
-  background: #ffc107;
+  background: var(--warning);
 }
+
 .senha-forca-barra.ativa-forte {
-  background: #28a745;
+  background: var(--green);
 }
 
 .senha-forca-texto {
-  font-size: 11px;
+  min-height: 14px;
+  color: rgba(23, 23, 21, 0.62);
+  font-family: var(--font-mono);
+  font-size: 10px;
   margin-top: 3px;
-  color: var(--texto-secundario);
   text-align: right;
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible,
+#closeIcon:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
 }

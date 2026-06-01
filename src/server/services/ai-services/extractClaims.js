@@ -106,7 +106,7 @@ async function extractClaims(classificacao, pageData = {}) {
     body: JSON.stringify({
       prompt: {
         id: process.env.OPENAI_EXTRACT_CLAIMS_PROMPT_ID,
-        version: "6",
+        version: "13",
         variables: {
           url: pageData.url || classificacao.url || "",
           categoriapagina: classificacao.categoriapagina || "",

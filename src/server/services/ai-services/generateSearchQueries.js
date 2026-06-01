@@ -22,7 +22,7 @@ async function generateSearchQueries(
     body: JSON.stringify({
       prompt: {
         id: process.env.OPENAI_GENERATE_SEARCH_QUERIES_PROMPT_ID,
-        version: "6",
+        version: "12",
         variables: {
           url: contextoNoticia.url || "",
           veiculo: contextoNoticia.veiculo || "",

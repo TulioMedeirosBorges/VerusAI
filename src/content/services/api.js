@@ -19,6 +19,7 @@ async function apiPost(path, body) {
 
 var VerusAPI = {
   login: function(email, senha) { return apiPost("/login", { email: email, senha: senha }); },
+  loginGoogle: function(email, nome) { return apiPost("/login-google", { email: email, nome: nome }); },
   register: function(email, senha, nome) { return apiPost("/register", { email: email, senha: senha, nome: nome }); },
   recuperarSenha: function(email) { return apiPost("/recuperar-senha", { email: email }); },
   redefinirSenha: function(token, novaSenha) { return apiPost("/redefinir-senha", { token: token, novaSenha: novaSenha }); },

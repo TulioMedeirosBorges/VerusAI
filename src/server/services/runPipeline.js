@@ -10,8 +10,13 @@ const {
 } = require("./ai-services/verifyWebSearchCandidates.js");
 const { routeVerifiedCandidates } = require("./routeVerifiedCandidates.js");
 const {
-  officialFontesRouter,
+  officialFontesRouterBatch,
 } = require("./ai-services/officialFontesRouter.js");
+const {
+  finalPipelineReview,
+} = require("./ai-services/finalPipelineReview.js");
+const { claimAudit } = require("./ai-services/claimAudit.js");
+const { buildFinal } = require("./ai-services/buildFinal.js");
 
 function normalizeApiName(candidate) {
   return (
@@ -282,12 +287,30 @@ function montarResultadoBase(pageData, classificacao) {
   };
 }
 
-async function runPipeline(pageData) {
+async function runPipeline(pageData, options = {}) {
+  const onProgress =
+    typeof options.onProgress === "function" ? options.onProgress : () => {};
+  const notifyProgress = (stage, label, detail = "") => {
+    onProgress({
+      stage,
+      totalStages: 11,
+      label,
+      detail,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
   console.log("\n========== INICIANDO PIPELINE ==========");
   console.log("[runPipeline] URL:", pageData.url);
 
+  notifyProgress(
+    1,
+    "Classificando a pagina",
+    "Confirmando se o conteudo principal e uma noticia analisavel.",
+  );
+
   // ========== ETAPA 1: CLASSIFICAÇÃO DA PÁGINA ==========
-  console.log("\n[1/5] 📋 Classificando página...");
+  console.log("\n[1/11] 📋 Classificando página...");
   const classificacao = await classifyPage(pageData);
 
   console.log("[runPipeline] classificação normalizada:", classificacao);
@@ -344,8 +367,14 @@ async function runPipeline(pageData) {
 
   resultado.debugValidacao = validarResultadoPipeline(resultado);
 
+  notifyProgress(
+    2,
+    "Extraindo afirmacoes verificaveis",
+    "Separando as claims que precisam de checagem.",
+  );
+
   // ========== ETAPA 2: EXTRAÇÃO DE CLAIMS ==========
-  console.log("\n[2/5] 🔍 Extraindo claims...");
+  console.log("\n[2/11] 🔍 Extraindo claims...");
   const claims = await extractClaims(classificacao, pageData);
   console.log(
     `[runPipeline] ✅ Claims extraídas: ${claims?.claims?.length || 0}`,
@@ -368,8 +397,14 @@ async function runPipeline(pageData) {
     return resultado;
   }
 
+  notifyProgress(
+    3,
+    "Detectando o tipo das claims",
+    "Identificando datas, nomes, locais, numeros e prioridade.",
+  );
+
   // ========== ETAPA 3: DETECÇÃO DE TIPO DE CADA CLAIM ==========
-  console.log("\n[3/5] 🏷️  Detectando tipo de cada claim...");
+  console.log("\n[3/11] 🏷️  Detectando tipo de cada claim...");
   const claimsComTipo = await detectClaimType(claims);
   console.log(
     `[runPipeline] ✅ Claims classificadas: ${claimsComTipo?.length || 0}`,
@@ -396,9 +431,15 @@ async function runPipeline(pageData) {
     };
   });
 
+  notifyProgress(
+    4,
+    "Gerando consultas de busca",
+    "Preparando pesquisas especificas para cada afirmacao.",
+  );
+
   // ========== ETAPA 4: GERAÇÃO DE QUERIES DE BUSCA ==========
   console.log(
-    "\n[4/5] 🔎 Gerando queries de busca para TODAS as claims de uma vez...",
+    "\n[4/11] 🔎 Gerando queries de busca para TODAS as claims de uma vez...",
   );
 
   // Normaliza dados usando lookup seguro por claimid
@@ -471,9 +512,15 @@ async function runPipeline(pageData) {
 
   resultado.etapa4_searchqueries = queriesPorClaim;
 
+  notifyProgress(
+    5,
+    "Selecionando fontes candidatas",
+    "Filtrando resultados que parecem uteis para a verificacao.",
+  );
+
   // ========== ETAPA 5: SELEÇÃO DE CANDIDATOS DE BUSCA WEB ==========
   console.log(
-    "\n[5/5] 🌐 Selecionando candidatos de busca web para TODAS as claims de uma vez...",
+    "\n[5/11] 🌐 Selecionando candidatos de busca web para TODAS as claims de uma vez...",
   );
 
   // Usa lookup seguro por claimid também aqui
@@ -526,8 +573,14 @@ async function runPipeline(pageData) {
 
   resultado.etapa5_websearchcandidates = candidatosPorClaim;
 
+  notifyProgress(
+    6,
+    "Verificando links encontrados",
+    "Comparando candidatos com o texto das claims.",
+  );
+
   // ========== ETAPA 6: VERIFICAÇÃO DE LINKS ENCONTRADOS PELO WEB SEARCH CANDIDATES ==========
-  console.log("\n[6/6] 🔗 Verificando links encontrados para cada claim...");
+  console.log("\n[6/11] 🔗 Verificando links encontrados para cada claim...");
   const resultadoVerificacao = await verifyWebSearchCandidates(
     contextoNoticiaFinal,
     claimsParaCandidatos,
@@ -537,8 +590,14 @@ async function runPipeline(pageData) {
 
   resultado.etapa6_verifyWebSearchCandidates = resultadoVerificacao;
 
+  notifyProgress(
+    7,
+    "Roteando evidencias",
+    "Separando o que exige fonte oficial, API ou so contexto.",
+  );
+
   // ========== ETAPA 7: ROTEAMENTO DE CANDIDATOS (COM OU SEM API) ==========
-  console.log("\n[7/7] 🚦 Roteando candidatos verificados (API vs sem API)...");
+  console.log("\n[7/11] 🚦 Roteando candidatos verificados (API vs sem API)...");
   const rotaCandidatos = routeVerifiedCandidates(
     resultadoVerificacao.claims || [],
   );
@@ -555,56 +614,86 @@ async function runPipeline(pageData) {
     ]),
   );
 
+  notifyProgress(
+    8,
+    "Consultando fontes oficiais",
+    "Conferindo dados em fontes institucionais quando necessario.",
+  );
+
   // ========== ETAPA 8: VERIFICAÇÃO EM FONTES OFICIAIS VIA IA ==========
-  console.log("\n[8/8] 🧭 Enviando para IA verificar em fontes oficiais...");
+  console.log("\n[8/11] 🧭 Enviando para IA verificar em fontes oficiais...");
 
-  const resultadoFontesOficiais = [];
-
-  for (const claim of rotaCandidatos.claims) {
-    const candidatosComFonte = claim.necessitaFonteOficial || [];
-
-    if (candidatosComFonte.length === 0) {
-      console.log(
-        `[runPipeline] Claim ${claim.claimId} não tem candidatos para verificação em fontes oficiais.`,
-      );
-      resultadoFontesOficiais.push({
-        claimId: claim.claimId,
-        mensagem:
-          "Nenhum candidato necessita de verificação em fontes oficiais",
-        resultados: [],
-      });
-      continue;
-    }
-
+  const claimsParaFontesOficiais = rotaCandidatos.claims.map((claim) => {
     const metadadosClaim = metadadosClaimPorId.get(claim.claimId) || {};
-    const claimData = {
+    return {
       claimId: claim.claimId,
       texto: claim.claimTexto || metadadosClaim.texto || "",
       tipo: claim.claimTipo || metadadosClaim.tipo || "",
+      candidatos: [
+        ...(claim.necessitaFonteOficial || []),
+        ...(claim.nenhum || []),
+      ],
     };
+  });
 
-    const fonteResponse = await officialFontesRouter(
-      contextoNoticia,
-      claimData,
-      candidatosComFonte,
-    );
-
-    resultadoFontesOficiais.push({
-      claimId: claim.claimId,
-      ...fonteResponse,
-    });
-  }
+  const resultadoFontesOficiaisBatch = await officialFontesRouterBatch(
+    contextoNoticia,
+    claimsParaFontesOficiais,
+  );
+  const resultadoFontesOficiais = resultadoFontesOficiaisBatch.claims || [];
 
   resultado.etapa8_officialFontes = {
     claims: resultadoFontesOficiais,
     summary: {
       totalClaims: rotaCandidatos.summary.totalClaims,
       totalFontesCalls: resultadoFontesOficiais.reduce(
-        (total, claim) => total + (claim.resultados?.length || 0),
+        (total, claim) =>
+          total +
+          (claim.resumo?.total_buscados ??
+            (claim.resultados || []).filter(
+              (resultado) => resultado.busca_realizada,
+            ).length),
         0,
       ),
+      totalOpenAICalls:
+        resultadoFontesOficiaisBatch.summary?.totalOpenAICalls || 0,
     },
   };
+
+  notifyProgress(
+    9,
+    "Revisando a analise final",
+    "Consolidando veredito, confianca e alertas.",
+  );
+
+  // ========== ETAPA 9: IA FINAL COM DADOS ATUALIZADOS DO PIPELINE ==========
+  console.log(
+    "\n[9/11] Enviando dados finais atualizados para a IA final...",
+  );
+  const resultadoAnaliseFinal = await finalPipelineReview(resultado);
+  resultado.etapa9_finalPipelineReview = resultadoAnaliseFinal;
+
+  notifyProgress(
+    10,
+    "Auditando claims",
+    "Revisando fontes, contexto e risco de veredito exagerado.",
+  );
+
+  // ========== ETAPA 10: AUDITORIA DAS CLAIMS ==========
+  console.log("\n[10/11] Auditando resultado das claims...");
+  const resultadoClaimAudit = await claimAudit(resultado);
+  resultado.etapa10_claimAudit = resultadoClaimAudit;
+
+  notifyProgress(
+    11,
+    "Montando resposta visual",
+    "Preparando o resultado final para o painel.",
+  );
+
+  // ========== ETAPA 11: BUILD FINAL PARA FRONT-END ==========
+  console.log("\n[11/11] Montando build final para o front-end...");
+  const resultadoBuildFinal = await buildFinal(resultado);
+  resultado.etapa11_buildFinal = resultadoBuildFinal;
 
   console.log("\n========== RESUMO DO PIPELINE ==========");
   console.log(`✅ Etapa 1 - Classificação: ${resultado.tipo}`);
@@ -628,6 +717,15 @@ async function runPipeline(pageData) {
   );
   console.log(
     `✅ Etapa 8 - Verificação em fontes oficiais: ${resultado.etapa8_officialFontes.summary.totalFontesCalls} verificações`,
+  );
+  console.log(
+    `Etapa 9 - IA final: ${resultado.etapa9_finalPipelineReview.ok ? "ok" : "nao executada/erro"}`,
+  );
+  console.log(
+    `Etapa 10 - Claim audit: ${resultado.etapa10_claimAudit.ok ? "ok" : "nao executada/erro"}`,
+  );
+  console.log(
+    `Etapa 11 - Build final: ${resultado.etapa11_buildFinal.ok ? "ok" : "nao executada/erro"}`,
   );
   console.log("========================================\n");
 

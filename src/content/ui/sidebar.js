@@ -46,7 +46,8 @@ function fecharSidebar() {
     btn.disabled = false;
   }
   if (btnChat) {
-    btnChat.textContent = "💬";
+    btnChat.innerHTML =
+      typeof _chatIconSvg === "function" ? _chatIconSvg() : "Chat";
     btnChat.style.display = "";
   }
 }
@@ -92,10 +93,24 @@ function criarSidebar(analysis, mostrarLoginImediato) {
     '" class="icon-settings" /></div>' +
     "</div>" +
     "</header>" +
+    '<div class="chatToolbar">' +
+    '<button id="chatHistoricoBtn" type="button" aria-label="Ver historico do chat">' +
+    '<svg class="chatHistoricoIcon" viewBox="0 0 24 24" aria-hidden="true">' +
+    '<circle cx="12" cy="12" r="9"></circle>' +
+    '<path d="M12 7v5l3 2"></path>' +
+    "</svg>" +
+    "<span>Historico</span>" +
+    "</button>" +
+    "</div>" +
+    '<div id="chatHistoricoPanel" class="chatHistoricoPanel escondido">' +
+    '<div class="chatHistoricoHeader"><strong>Historico do chat</strong><button id="chatHistoricoFechar" type="button">Fechar</button></div>' +
+    '<div id="chatHistoricoLista"></div>' +
+    '<button id="chatHistoricoLimpar" type="button">Limpar historico</button>' +
+    "</div>" +
     '<div id="chatMensagens"></div>' +
     '<footer class="chatFooter">' +
-    '<input type="text" id="chatInput" placeholder="Faça sua pergunta..." />' +
-    '<button id="chatEnviar">➤</button>' +
+    '<textarea id="chatInput" rows="1" placeholder="Pergunte sobre uma noticia..."></textarea>' +
+    '<button id="chatEnviar" type="button" aria-label="Enviar pergunta">&rarr;</button>' +
     "</footer>" +
     '<div id="menuConfig" class="menuConfig escondido">' +
     '<div class="menuConfigHeader"><h2>Configurações</h2><button id="fecharConfig">✕</button></div>' +
@@ -111,7 +126,6 @@ function criarSidebar(analysis, mostrarLoginImediato) {
     '<div class="menuConfigItem"><p>Alto contraste</p><div class="retangleConfig" data-config="contraste"><div class="circleConfig"></div></div></div>' +
     '<div class="menuConfigItem"><p>Tema escuro</p><div class="retangleConfig" data-config="tema"><div class="circleConfig"></div></div></div>' +
     '<div class="menuConfigItem"><p>Leitor de Notícia</p><div class="retangleConfig" data-config="leitornoticias"><div class="circleConfig"></div></div></div>' +
-    '<div class="menuConfigItem"><p>Modo Teste (sem IA)</p><div class="retangleConfig" data-config="modoTeste"><div class="circleConfig"></div></div></div>' +
     "</div>" +
     "</div>";
 
@@ -219,7 +233,7 @@ function criarSidebar(analysis, mostrarLoginImediato) {
   });
 
   shadow.getElementById("menuLogout").addEventListener("click", function () {
-    storageRemove(["logado", "email", "configs"]).then(function () {
+    storageRemove(["logado", "email", "nome", "authToken", "configs"]).then(function () {
       VerusState.cachedEmail = null;
       VerusState.cachedNome = null;
       open.classList.remove("alto-contraste", "tema-escuro");
@@ -233,100 +247,19 @@ function criarSidebar(analysis, mostrarLoginImediato) {
     _renderAnalysis(shadow, open, analysis, chatMensagens);
   }
 
-  // Chat
-  function _verificarLoginParaChat() {
-    return storageGet("logado").then(function (r) {
-      return r.logado === true;
+  if (window.VerusChat && typeof window.VerusChat.inicializar === "function") {
+    window.VerusChat.inicializar({
+      shadow: shadow,
+      analysis: analysis,
+      menuNomeUsuario: menuNomeUsuario,
     });
   }
 
-  function _abrirLoginSeNecessario() {
-    if (shadow.getElementById("login_popup_interno")) return;
-    chatInput.blur();
-    criarPopupLoginInterno(shadow, function (email, nome) {
-      menuNomeUsuario.textContent = nome || email.split("@")[0];
-    });
-  }
-
-  chatInput.addEventListener("focus", async function () {
-    if (shadow.getElementById("login_popup_interno")) return;
-    var logado = await _verificarLoginParaChat();
-    if (!logado) _abrirLoginSeNecessario();
-  });
-
-  chatInput.addEventListener("keydown", function (e) {
-    e.stopPropagation();
-    if (e.key === "Enter") _enviarMensagem();
-  });
-  chatInput.addEventListener("keyup", function (e) {
-    e.stopPropagation();
-  });
-  chatEnviar.addEventListener("click", _enviarMensagem);
-
-  async function _enviarMensagem() {
-    var logado = await _verificarLoginParaChat();
-    if (!logado) {
-      _abrirLoginSeNecessario();
-      return;
-    }
-
-    var texto = chatInput.value.trim();
-    if (!texto) return;
-
-    var msgUsuario = document.createElement("div");
-    msgUsuario.className = "mensagemUsuario";
-    msgUsuario.textContent = texto;
-    chatMensagens.appendChild(msgUsuario);
-    chatInput.value = "";
-    chatMensagens.scrollTop = chatMensagens.scrollHeight;
-
-    var msgIA = document.createElement("div");
-    msgIA.className = "mensagemIA";
-    msgIA.textContent = "Digitando...";
-    chatMensagens.appendChild(msgIA);
-    chatMensagens.scrollTop = chatMensagens.scrollHeight;
-
-    try {
-      var chatPayload = {
-        text: texto,
-        url: window.location.href,
-        title: document.title,
-        foundLinks: [],
-        imageUrl: null,
-      };
-      var res = await new Promise(function (resolve) {
-        chrome.runtime.sendMessage(
-          {
-            type: "FETCH",
-            url: "http://localhost:3000/analisar",
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: chatPayload,
-          },
-          resolve,
-        );
-      });
-      var resposta =
-        res && res.ok
-          ? res.data
-          : { summary: res?.data?.erro || "Erro no servidor", links: [] };
-      var linksHTML =
-        resposta.links && resposta.links.length > 0
-          ? resposta.links
-              .map(function (l) {
-                return (
-                  "<a href='" + l.url + "' target='_blank'>" + l.title + "</a>"
-                );
-              })
-              .join(" · ")
-          : "";
-      msgIA.innerHTML = resposta.summary || resposta;
-      if (linksHTML) msgIA.innerHTML += "<br/><br/>" + linksHTML;
-    } catch (e) {
-      msgIA.textContent = "Erro ao obter resposta.";
-    }
-
-    chatMensagens.scrollTop = chatMensagens.scrollHeight;
+  if (
+    window.VerusLinkPreview &&
+    typeof window.VerusLinkPreview.attach === "function"
+  ) {
+    window.VerusLinkPreview.attach(shadow);
   }
 
   if (mostrarLoginImediato) {
@@ -366,6 +299,463 @@ function _formatarData(valor) {
   }
 }
 
+function _escapeHTML(valor) {
+  return String(valor == null ? "" : valor)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function _decodeHTMLEntities(valor) {
+  var decoded = String(valor == null ? "" : valor);
+
+  for (var i = 0; i < 2; i++) {
+    if (!/&(?:lt|gt|amp|quot|#39|apos);/i.test(decoded)) break;
+    var textarea = document.createElement("textarea");
+    textarea.innerHTML = decoded;
+    decoded = textarea.value;
+  }
+
+  return decoded;
+}
+
+function _sanitizeInlineHTML(valor) {
+  var template = document.createElement("template");
+  template.innerHTML = _decodeHTMLEntities(valor);
+
+  function sanitizeNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return _escapeHTML(node.nodeValue || "");
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+
+    var tag = node.tagName.toLowerCase();
+    var children = Array.from(node.childNodes).map(sanitizeNode).join("");
+
+    if (tag === "br") return "<br>";
+
+    if (tag === "strong" || tag === "b" || tag === "em" || tag === "i") {
+      return "<" + tag + ">" + children + "</" + tag + ">";
+    }
+
+    if (tag === "a") {
+      var href = _safeUrl(node.getAttribute("href"));
+      if (!href) return children;
+      return (
+        '<a href="' +
+        _escapeHTML(href) +
+        '" target="_blank" rel="noopener noreferrer">' +
+        children +
+        "</a>"
+      );
+    }
+
+    return children;
+  }
+
+  return Array.from(template.content.childNodes).map(sanitizeNode).join("");
+}
+
+function _safeUrl(valor) {
+  var url = String(valor || "").trim();
+  if (!/^https?:\/\//i.test(url)) return "";
+  try {
+    return new URL(url).href;
+  } catch (e) {
+    return "";
+  }
+}
+
+function _safeArray(valor) {
+  return Array.isArray(valor) ? valor : [];
+}
+
+function _toNumber(valor, fallback) {
+  if (typeof valor === "string") {
+    var normalizado = valor.trim().replace(",", ".").replace("%", "");
+    var parsed = Number(normalizado);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  var numero = Number(valor);
+  return Number.isFinite(numero) ? numero : fallback;
+}
+
+function _tokenClasse(valor) {
+  return String(valor || "indefinido")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function _labelVeredito(valor) {
+  var labels = {
+    confirmado: "Confirmado",
+    provavelmente_confirmado: "Provavelmente confirmado",
+    parcialmente_confirmado: "Parcialmente confirmado",
+    inconclusivo: "Inconclusivo",
+    nao_confirmado: "Não confirmado",
+    provavelmente_falso: "Provavelmente falso",
+    falso: "Falso",
+  };
+  return labels[valor] || valor || "Inconclusivo";
+}
+
+function _labelStatusClaim(valor) {
+  var labels = {
+    confirmada: "Confirmada",
+    parcialmente_confirmada: "Parcialmente confirmada",
+    inconclusiva: "Inconclusiva",
+    nao_confirmada: "Não confirmada",
+    contradita: "Contradita",
+    erro_na_verificacao: "Erro na verificação",
+  };
+  return labels[valor] || valor || "Inconclusiva";
+}
+
+function _labelNivel(valor) {
+  var labels = {
+    alta: "Alta",
+    boa: "Boa",
+    moderada: "Moderada",
+    baixa: "Baixa",
+    muito_baixa: "Muito baixa",
+  };
+  return labels[valor] || valor || "-";
+}
+
+function _getBuildFinalResult(resultado, root) {
+  var candidato =
+    resultado?.etapa11_buildFinal ||
+    resultado?.etapa10_buildFinal ||
+    resultado?.buildFinal ||
+    root?.etapa11_buildFinal ||
+    root?.etapa10_buildFinal ||
+    root?.buildFinal ||
+    root?._resultado?.etapa11_buildFinal ||
+    root?._resultado?.etapa10_buildFinal ||
+    (resultado?.etapa === "buildFinal" ? resultado : null) ||
+    (root?.etapa === "buildFinal" ? root : null);
+
+  return candidato && candidato.etapa === "buildFinal" ? candidato : null;
+}
+
+function _buildMetaItem(label, value) {
+  if (!value) return "";
+  return (
+    "<span class='bf-meta-item'><strong>" +
+    _escapeHTML(label) +
+    ":</strong> " +
+    _escapeHTML(value) +
+    "</span>"
+  );
+}
+
+function _buildSimpleList(items, className) {
+  var list = _safeArray(items)
+    .filter(function (item) {
+      return item;
+    })
+    .map(function (item) {
+      return "<li>" + _escapeHTML(item) + "</li>";
+    })
+    .join("");
+
+  return list ? "<ul class='" + className + "'>" + list + "</ul>" : "";
+}
+
+function _buildEvidenceHTML(evidencias) {
+  return _safeArray(evidencias)
+    .slice(0, 3)
+    .map(function (ev) {
+      var url = _safeUrl(ev.url);
+      var titulo = ev.titulo || ev.fonte || url || "Fonte";
+      var tituloHTML = url
+        ? "<a class='bf-source-link' href='" +
+          _escapeHTML(url) +
+          "' data-preview-title='" +
+          _escapeHTML(titulo) +
+          "' target='_blank' rel='noopener noreferrer'>" +
+          _escapeHTML(titulo) +
+          "</a>"
+        : "<strong>" + _escapeHTML(titulo) + "</strong>";
+
+      return (
+        "<li>" +
+        tituloHTML +
+        (ev.relacaoComClaim
+          ? "<span class='bf-evidence-role'>" +
+            _escapeHTML(ev.relacaoComClaim) +
+            "</span>"
+          : "") +
+        (ev.resumoEvidencia
+          ? "<p>" + _escapeHTML(ev.resumoEvidencia) + "</p>"
+          : "") +
+        "</li>"
+      );
+    })
+    .join("");
+}
+
+function _buildFinalClaimsHTML(claims) {
+  return _safeArray(claims)
+    .map(function (claim) {
+      var status = claim.statusNormalizado || claim.statusOriginal || "";
+      var statusClass = _tokenClasse(status);
+      var evidenciasHTML = _buildEvidenceHTML(claim.evidencias);
+
+      return (
+        "<article class='bf-claim'>" +
+        "<div class='bf-claim-top'>" +
+        "<span class='bf-claim-id'>Claim " +
+        _escapeHTML(claim.id || "-") +
+        "</span>" +
+        "<span class='bf-claim-status bf-claim-status-" +
+        statusClass +
+        "'>" +
+        _escapeHTML(_labelStatusClaim(status)) +
+        "</span>" +
+        "</div>" +
+        "<p class='bf-claim-text'>" +
+        _escapeHTML(claim.textoFinal || claim.textoOriginal || "") +
+        "</p>" +
+        (claim.explicacao
+          ? "<p class='bf-claim-explanation'>" +
+            _escapeHTML(claim.explicacao) +
+            "</p>"
+          : "") +
+        (evidenciasHTML
+          ? "<div class='bf-claim-evidence'><span>Evidências</span><ul>" +
+            evidenciasHTML +
+            "</ul></div>"
+          : "") +
+        "</article>"
+      );
+    })
+    .join("");
+}
+
+function _buildFinalSourcesHTML(fontes) {
+  return _safeArray(fontes)
+    .slice(0, 6)
+    .map(function (fonte) {
+      var url = _safeUrl(fonte.url);
+      var titulo = fonte.titulo || fonte.fonte || url || "Fonte";
+      var tituloHTML = url
+        ? "<a href='" +
+          _escapeHTML(url) +
+          "' data-preview-title='" +
+          _escapeHTML(titulo) +
+          "' target='_blank' rel='noopener noreferrer'>" +
+          _escapeHTML(titulo) +
+          "</a>"
+        : "<strong>" + _escapeHTML(titulo) + "</strong>";
+
+      return (
+        "<article class='bf-source'>" +
+        "<div class='bf-source-title'>" +
+        tituloHTML +
+        "</div>" +
+        "<div class='bf-source-meta'>" +
+        _escapeHTML(fonte.tipoFonte || "outra") +
+        (fonte.relevancia ? " · " + _escapeHTML(fonte.relevancia) : "") +
+        "</div>" +
+        (fonte.papelNaVerificacao
+          ? "<p>" + _escapeHTML(fonte.papelNaVerificacao) + "</p>"
+          : "") +
+        (fonte.resumo ? "<p>" + _escapeHTML(fonte.resumo) + "</p>" : "") +
+        "</article>"
+      );
+    })
+    .join("");
+}
+
+function _buildFinalAlertsHTML(alertas) {
+  return _safeArray(alertas)
+    .map(function (alerta) {
+      return (
+        "<li class='bf-alert bf-alert-" +
+        _tokenClasse(alerta.gravidade || "media") +
+        "'>" +
+        "<strong>" +
+        _escapeHTML(alerta.gravidade || "media") +
+        "</strong>" +
+        "<span>" +
+        _escapeHTML(alerta.mensagem || alerta.tipo || "") +
+        "</span>" +
+        (alerta.impacto ? "<em>" + _escapeHTML(alerta.impacto) + "</em>" : "") +
+        "</li>"
+      );
+    })
+    .join("");
+}
+
+function _buildBuildFinalHTML(buildFinal, payload) {
+  var score = Math.max(
+    0,
+    Math.min(100, _toNumber(buildFinal.scoreConfiabilidade, 0)),
+  );
+  var veredito = buildFinal.vereditoGeral || "inconclusivo";
+  var nivel = buildFinal.nivelConfiabilidade || "";
+  var titulo =
+    buildFinal.tituloFinal || payload?.title || payload?.url || "Resultado";
+  var metaHTML =
+    _buildMetaItem("Fonte", buildFinal.veiculo || payload?.siteName) +
+    _buildMetaItem(
+      "Publicado",
+      buildFinal.dataPublicacao
+        ? _formatarData(buildFinal.dataPublicacao)
+        : payload?.publishDate
+          ? _formatarData(payload.publishDate)
+          : "",
+    ) +
+    _buildMetaItem("Tipo", buildFinal.tipoConteudo || payload?.pageType);
+  var claimsHTML = _buildFinalClaimsHTML(buildFinal.claimsAnalisadas);
+  var fontesHTML = _buildFinalSourcesHTML(buildFinal.fontesPrincipais);
+  var alertasHTML = _buildFinalAlertsHTML(buildFinal.alertasGerais);
+  var pontosHTML = _buildSimpleList(buildFinal.pontosImportantes, "bf-list");
+  var confirmadosHTML = _buildSimpleList(
+    buildFinal.oQueFoiConfirmado,
+    "bf-list bf-list-confirmed",
+  );
+  var inconclusivosHTML = _buildSimpleList(
+    buildFinal.oQueFicouInconclusivo,
+    "bf-list bf-list-unknown",
+  );
+  var contraditosHTML = _buildSimpleList(
+    buildFinal.oQueFoiContradito,
+    "bf-list bf-list-disputed",
+  );
+
+  return (
+    "<section class='build-final-result'>" +
+    "<header class='bf-header'>" +
+    "<span class='bf-eyebrow'>Resultado final do VerusIA</span>" +
+    "<h2>" +
+    _escapeHTML(titulo) +
+    "</h2>" +
+    (metaHTML ? "<div class='bf-meta'>" + metaHTML + "</div>" : "") +
+    "</header>" +
+    "<section class='bf-verdict bf-verdict-" +
+    _tokenClasse(veredito) +
+    "'>" +
+    "<div>" +
+    "<span class='bf-label'>Veredito geral</span>" +
+    "<strong>" +
+    _escapeHTML(_labelVeredito(veredito)) +
+    "</strong>" +
+    "</div>" +
+    "<div class='bf-score' style='--bf-score:" +
+    score +
+    "%'>" +
+    "<span>" +
+    score +
+    "%</span>" +
+    "<small>" +
+    _escapeHTML(_labelNivel(nivel)) +
+    "</small>" +
+    "</div>" +
+    "</section>" +
+    (buildFinal.mensagemPrincipalUsuario
+      ? "<p class='bf-main-message'>" +
+        _sanitizeInlineHTML(buildFinal.mensagemPrincipalUsuario) +
+        "</p>"
+      : "") +
+    (buildFinal.resumoCurto
+      ? "<section class='bf-section'><h3>Resumo</h3><p>" +
+        _escapeHTML(buildFinal.resumoCurto) +
+        "</p></section>"
+      : "") +
+    (buildFinal.resumoDetalhado
+      ? "<section class='bf-section'><h3>Detalhes da análise</h3><p>" +
+        _escapeHTML(buildFinal.resumoDetalhado) +
+        "</p></section>"
+      : "") +
+    (pontosHTML
+      ? "<section class='bf-section'><h3>Pontos importantes</h3>" +
+        pontosHTML +
+        "</section>"
+      : "") +
+    (confirmadosHTML || inconclusivosHTML || contraditosHTML
+      ? "<section class='bf-section bf-findings'><h3>O que a análise encontrou</h3>" +
+        (confirmadosHTML
+          ? "<div><strong>Confirmado</strong>" + confirmadosHTML + "</div>"
+          : "") +
+        (inconclusivosHTML
+          ? "<div><strong>Inconclusivo</strong>" + inconclusivosHTML + "</div>"
+          : "") +
+        (contraditosHTML
+          ? "<div><strong>Contradito</strong>" + contraditosHTML + "</div>"
+          : "") +
+        "</section>"
+      : "") +
+    (claimsHTML
+      ? "<section class='bf-section bf-claims'><h3>Afirmações analisadas</h3>" +
+        claimsHTML +
+        "</section>"
+      : "") +
+    (fontesHTML
+      ? "<section class='bf-section bf-sources'><h3>Fontes principais</h3>" +
+        fontesHTML +
+        "</section>"
+      : "") +
+    (alertasHTML
+      ? "<section class='bf-section bf-alerts'><h3>Alertas</h3><ul>" +
+        alertasHTML +
+        "</ul></section>"
+      : "") +
+    (buildFinal.textoFinalSemHtml
+      ? "<section class='bf-section'><h3>Conclusão</h3><p>" +
+        _escapeHTML(buildFinal.textoFinalSemHtml) +
+        "</p></section>"
+      : "") +
+    "</section>"
+  );
+}
+
+function _renderBuildFinal(chatMensagens, buildFinal, payload) {
+  var msgIA = document.createElement("div");
+  msgIA.className = "mensagemIAPrimeira build-final-message";
+  msgIA.innerHTML = _buildBuildFinalHTML(buildFinal, payload || {});
+  chatMensagens.appendChild(msgIA);
+  chatMensagens.scrollTop = 0;
+}
+
+function _renderFinalNotice(chatMensagens, titulo, mensagem, detalhes) {
+  var detalhesHTML = _safeArray(detalhes)
+    .filter(function (item) {
+      return item && item.value;
+    })
+    .map(function (item) {
+      return (
+        "<div class='claim-item'><p class='claim-text'><strong>" +
+        _escapeHTML(item.label) +
+        ":</strong> " +
+        _escapeHTML(item.value) +
+        "</p></div>"
+      );
+    })
+    .join("");
+
+  var msgIA = document.createElement("div");
+  msgIA.className = "mensagemIAPrimeira";
+  msgIA.innerHTML =
+    '<p class="result">' +
+    _escapeHTML(titulo) +
+    "</p>" +
+    '<p id="textAnalysis">' +
+    _escapeHTML(mensagem) +
+    "</p>" +
+    (detalhesHTML ? '<div id="claimsSection">' + detalhesHTML + "</div>" : "");
+  chatMensagens.appendChild(msgIA);
+  chatMensagens.scrollTop = chatMensagens.scrollHeight;
+}
+
 function _renderAnalysis(shadow, open, analysis, chatMensagens) {
   // Payload bruto do extrator (sem summary/claims)
   if (!analysis.summary && !analysis.claims) {
@@ -400,6 +790,86 @@ function _renderAnalysis(shadow, open, analysis, chatMensagens) {
       root ||
       {};
 
+    var buildFinal = _getBuildFinalResult(resultado, root);
+    if (buildFinal) {
+      console.log("[sidebar] buildFinal recebido:", buildFinal);
+      _renderBuildFinal(chatMensagens, buildFinal, payload);
+      return;
+    }
+
+    if (resultado && resultado.erro) {
+      _renderFinalNotice(chatMensagens, "Resultado da IA", "A analise nao foi concluida pelo servidor.", [
+        { label: "Erro", value: resultado.erro },
+      ]);
+      return;
+    }
+
+    if (root && root.erro) {
+      _renderFinalNotice(chatMensagens, "Resultado da IA", "A analise nao foi concluida pelo servidor.", [
+        { label: "Erro", value: root.erro },
+      ]);
+      return;
+    }
+
+    if (resultado && resultado.etapa === "classifyPage") {
+      var cFinal = resultado.classificacao || {};
+      var confiancaFinal = cFinal.confianca
+        ? Math.round(cFinal.confianca * 100) + "%"
+        : "";
+      _renderFinalNotice(
+        chatMensagens,
+        "Resultado da IA",
+        resultado.mensagem || "A IA terminou a classificacao da pagina.",
+        [
+          { label: "Status", value: resultado.status },
+          { label: "Tipo", value: cFinal.tipo || resultado.tipo },
+          {
+            label: "Categoria",
+            value:
+              cFinal.categoriatextoprincipal ||
+              resultado.categoriatextoprincipal,
+          },
+          {
+            label: "Motivo",
+            value:
+              cFinal.motivoclassificacao ||
+              cFinal.motivoClassificacao ||
+              resultado.motivonaosernoticia,
+          },
+          { label: "Confianca", value: confiancaFinal },
+        ],
+      );
+      return;
+    }
+
+    if (resultado) {
+      _renderFinalNotice(
+        chatMensagens,
+        "Resultado final indisponivel",
+        "A IA terminou, mas o servidor nao retornou o bloco final buildFinal.",
+        [
+          { label: "Status", value: resultado.status },
+          {
+            label: "Claims encontradas",
+            value:
+              resultado.etapa2_claims &&
+              resultado.etapa2_claims.total !== undefined
+                ? String(resultado.etapa2_claims.total)
+                : "",
+          },
+        ],
+      );
+      return;
+    }
+
+    _renderFinalNotice(
+      chatMensagens,
+      "Resultado final indisponivel",
+      "A IA terminou, mas nenhum resultado final foi retornado pelo servidor.",
+      [],
+    );
+    return;
+
     var classificacao = resultado?.classificacao || root?.classificacao || {};
 
     var textoLimpoServidor =
@@ -422,17 +892,20 @@ function _renderAnalysis(shadow, open, analysis, chatMensagens) {
     var statusServidor = "";
     if (resultado && resultado.erro) {
       statusServidor =
-        "<div style='background:#ff5858;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;'>❌ Erro no servidor: " +
+        "<div class='pipeline-status pipeline-status-error'>❌ Erro no servidor: " +
         resultado.erro +
         "</div>";
     } else if (resultado && resultado.etapa === "classifyPage") {
       var c = resultado.classificacao || {};
-      var cor = resultado.status === "ignorado" ? "#f1ae2b" : "#3fb537";
+      var statusClass =
+        resultado.status === "ignorado"
+          ? "pipeline-status-warn"
+          : "pipeline-status-ok";
       var icone = resultado.status === "ignorado" ? "⚠️" : "✅";
       statusServidor =
-        "<div style='background:" +
-        cor +
-        ";color:#000;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;'>" +
+        "<div class='pipeline-status " +
+        statusClass +
+        "'>" +
         icone +
         " Pipeline: <strong>" +
         resultado.status +
@@ -442,17 +915,17 @@ function _renderAnalysis(shadow, open, analysis, chatMensagens) {
         (c.confianca ? Math.round(c.confianca * 100) + "%" : "-") +
         "</strong>" +
         (c.motivoClassificacao
-          ? "<br/><span style='font-size:11px;'>" +
+          ? "<br/><span class='pipeline-status-detail'>" +
             c.motivoClassificacao +
             "</span>"
           : "") +
         "</div>";
     } else if (resultado) {
       statusServidor =
-        "<div style='background:#3fb537;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;'>✅ Pipeline concluído com sucesso.</div>";
+        "<div class='pipeline-status pipeline-status-ok'>✅ Pipeline concluído com sucesso.</div>";
     } else {
       statusServidor =
-        "<div style='background:#555;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;'>⚠️ Servidor não respondeu. Verifique se está rodando.</div>";
+        "<div class='pipeline-status pipeline-status-muted'>⚠️ Servidor não respondeu. Verifique se está rodando.</div>";
     }
     var campos = [
       { label: "URL", value: payload.url },
@@ -559,12 +1032,12 @@ function _renderAnalysis(shadow, open, analysis, chatMensagens) {
 
 function _buildSourceHTML(s) {
   var credColors = {
-    alta: "#3fb537",
-    média: "#f1ae2b",
-    baixa: "#ff5858",
-    desconhecida: "#aaa",
+    alta: "#1a7a3c",
+    média: "#b07800",
+    baixa: "#d3392d",
+    desconhecida: "#6f6f68",
   };
-  var credColor = credColors[s.credibility] || "#aaa";
+  var credColor = credColors[s.credibility] || "#6f6f68";
   var typeLabels = {
     news_outlet: "Veículo jornalístico",
     influencer: "Influenciador",

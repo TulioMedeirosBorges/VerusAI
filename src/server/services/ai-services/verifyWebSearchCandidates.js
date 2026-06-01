@@ -209,7 +209,7 @@ async function verifyWebSearchCandidates(
     body: JSON.stringify({
       prompt: {
         id: promptId,
-        version: "7",
+        version: "16",
         variables: {
           url: normalized.contextonoticia.url,
           veiculo: normalized.contextonoticia.veiculo,

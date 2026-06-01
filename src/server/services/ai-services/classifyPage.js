@@ -122,7 +122,7 @@ async function classifyPage(pageData) {
     body: JSON.stringify({
       prompt: {
         id: process.env.OPENAI_CLASSIFY_PAGE_PROMPT_ID,
-        version: "22",
+        version: "26",
         variables: {
           url: pageData.url || "",
           domain: pageData.domain || "",

@@ -66,7 +66,12 @@ botao.addEventListener("click", async () => {
 
     if (resposta.ok) {
       chrome.storage.local.set(
-        { logado: true, email: dados.email, nome: dados.nome },
+        {
+          logado: true,
+          email: dados.email,
+          nome: dados.nome,
+          authToken: dados.authToken,
+        },
         () => {
           window.location.href = "../settings/settings.html";
         },
@@ -102,28 +107,41 @@ document.getElementById("Google").addEventListener("click", () => {
       return;
     }
 
-    const respostaGoogle = await fetch(
-      "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
+    try {
+      const respostaGoogle = await fetch(
+        "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
 
-    const usuarioGoogle = await respostaGoogle.json();
+      const usuarioGoogle = await respostaGoogle.json();
 
-    await fetch("http://localhost:3000/login-google", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: usuarioGoogle.email,
-        nome: usuarioGoogle.name,
-      }),
-    });
+      const respostaLogin = await fetch("http://localhost:3000/login-google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: usuarioGoogle.email,
+          nome: usuarioGoogle.name,
+        }),
+      });
+      const dadosLogin = await respostaLogin.json();
+      if (!respostaLogin.ok) {
+        throw new Error(dadosLogin.erro || "Erro no login Google");
+      }
 
-    chrome.storage.local.set(
-      { logado: true, email: usuarioGoogle.email, nome: usuarioGoogle.name },
-      () => {
-        window.location.href = "../settings/settings.html";
-      },
-    );
+      chrome.storage.local.set(
+        {
+          logado: true,
+          email: dadosLogin.email,
+          nome: dadosLogin.nome,
+          authToken: dadosLogin.authToken,
+        },
+        () => {
+          window.location.href = "../settings/settings.html";
+        },
+      );
+    } catch (err) {
+      console.error("Erro ao processar login com Google:", err);
+    }
   });
 });
 
@@ -211,7 +229,7 @@ function mostrarTelaCodigoESenha(email) {
   main.innerHTML = `
     <div class="recuperacao" style="gap:4px">
       <h2>Redefinir senha</h2>
-      <p class="subtitulo">Código enviado para <strong>${email}</strong></p>
+      <p class="subtitulo">Código enviado para <strong>${email}</strong>. Ele expira em 5 minutos.</p>
       <div class="input" style="gap:4px">
         <div class="E-mail">
           <label>Código</label>
@@ -241,8 +259,8 @@ function mostrarTelaCodigoESenha(email) {
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <a id="voltarLogin2" href="#" style="font-size:11px;color:#888;text-decoration:none">← Voltar</a>
-        <a id="reenviarCodigo" href="#" style="font-size:11px;color:#f1ae2b;text-decoration:none">Reenviar código</a>
+        <a id="voltarLogin2" href="#">← Voltar</a>
+        <a id="reenviarCodigo" href="#">Reenviar código</a>
       </div>
     </div>
   `;

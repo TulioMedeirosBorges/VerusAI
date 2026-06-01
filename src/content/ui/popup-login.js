@@ -235,10 +235,16 @@ function criarPopupLoginInterno(shadow, onLoginSuccess) {
     try {
       var res = await VerusAPI.login(email, senha);
       if (res.ok) {
-        await storageSet({ logado: true, email: res.data.email });
+        await storageSet({
+          logado: true,
+          email: res.data.email,
+          nome: res.data.nome,
+          authToken: res.data.authToken,
+        });
         VerusState.cachedEmail = res.data.email;
+        VerusState.cachedNome = res.data.nome;
         fecharPopupEMascara();
-        onLoginSuccess(res.data.email, null);
+        onLoginSuccess(res.data.email, res.data.nome);
       } else {
         var campo = res.data.campo === "senha" ? "popup_senha_login" : "popup_email_login";
         var span = res.data.campo === "senha" ? "erroPasswordLogin" : "erroEmailLogin";
@@ -259,10 +265,18 @@ function criarPopupLoginInterno(shadow, onLoginSuccess) {
         var res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", { headers: { Authorization: "Bearer " + token } });
         if (!res.ok) throw new Error("API retornou " + res.status);
         var user = await res.json();
-        await storageSet({ logado: true, email: user.email });
-        VerusState.cachedEmail = user.email;
+        var login = await VerusAPI.loginGoogle(user.email, user.name);
+        if (!login.ok) throw new Error(login.data?.erro || "Erro no login Google");
+        await storageSet({
+          logado: true,
+          email: login.data.email,
+          nome: login.data.nome,
+          authToken: login.data.authToken,
+        });
+        VerusState.cachedEmail = login.data.email;
+        VerusState.cachedNome = login.data.nome;
         fecharPopupEMascara();
-        onLoginSuccess(user.email, null);
+        onLoginSuccess(login.data.email, login.data.nome);
       } catch(e) { console.error("[VerusAI] Erro login Google:", e); alert("Erro ao processar login."); }
     });
   });
@@ -294,9 +308,15 @@ function criarPopupLoginInterno(shadow, onLoginSuccess) {
     try {
       var res = await VerusAPI.register(email, senha, nome);
       if (res.ok) {
-        await storageSet({ logado: true, email: email });
-        VerusState.cachedEmail = email;
-        onLoginSuccess(email, nome);
+        await storageSet({
+          logado: true,
+          email: res.data.email || email,
+          nome: res.data.nome || nome,
+          authToken: res.data.authToken,
+        });
+        VerusState.cachedEmail = res.data.email || email;
+        VerusState.cachedNome = res.data.nome || nome;
+        onLoginSuccess(res.data.email || email, res.data.nome || nome);
         mudarTela("tela_sucesso_cadastro");
       } else {
         setErro("popup_email_registro", "erroEmailRegistro", res.data.erro);
@@ -318,7 +338,7 @@ function criarPopupLoginInterno(shadow, onLoginSuccess) {
       var res = await VerusAPI.recuperarSenha(email);
       if (res.ok) {
         var msgEl = shadow.getElementById("mensagem_sucesso_email");
-        msgEl.textContent = "📧 Enviamos um código para " + email + ". Verifique sua caixa de entrada e spam.";
+        msgEl.textContent = "📧 Enviamos um código para " + email + ". Ele expira em 5 minutos. Verifique sua caixa de entrada e spam.";
         msgEl.style.display = "block";
         mudarTela("tela_redefinir");
         shadow.getElementById("popup_token").dataset.email = email;
