@@ -8,6 +8,7 @@
 
   function init() {
     CreateButton();
+    CriarSeloFonte();
   }
 
   init();

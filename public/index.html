@@ -168,6 +168,9 @@
         <button class="tab-btn" data-view="aovivo" type="button">
           <span class="tab-dot" aria-hidden="true"></span> Ao Vivo
         </button>
+        <button class="tab-btn" data-view="fontes" type="button">
+          <span class="tab-rank" aria-hidden="true">★</span> Ranking de Fontes
+        </button>
       </nav>
 
       <section class="hero">
@@ -278,6 +281,56 @@
           <div class="loading">Carregando notícias…</div>
         </div>
       </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           Ranking de Fontes — visível apenas na aba "Ranking de Fontes"
+           ═══════════════════════════════════════════════════════════ -->
+      <section class="fontes-view" id="fontesView" hidden>
+        <div class="fontes-head">
+          <div class="fontes-titulo">
+            <span class="fontes-star" aria-hidden="true">★</span>
+            <h2>Ranking de Fontes</h2>
+          </div>
+          <div class="fontes-meta">
+            <span id="fontesStatus" class="fontes-status">Carregando…</span>
+            <button id="fontesRefresh" class="fontes-refresh" type="button">
+              ↻ Atualizar
+            </button>
+          </div>
+        </div>
+
+        <p class="fontes-intro">
+          Todas as fontes (veículos) já analisadas no VerusAI. Vote com
+          <strong>like</strong> ou <strong>dislike</strong> nas que você
+          considera confiáveis e denuncie as problemáticas. O ranking é
+          ordenado pela avaliação da comunidade.
+        </p>
+
+        <div class="fontes-stats" id="fontesStats"></div>
+
+        <div class="fontes-busca-wrap">
+          <input
+            type="text"
+            id="fontesBusca"
+            class="fontes-busca"
+            placeholder="Buscar fonte por nome ou domínio…"
+            autocomplete="off"
+            aria-label="Buscar fonte"
+          />
+        </div>
+
+        <div class="fontes-filtros" id="fontesFiltros" role="group" aria-label="Filtrar fontes">
+          <button class="fontes-chip ativo" data-fonte-filtro="todas" type="button">Todas</button>
+          <button class="fontes-chip" data-fonte-filtro="analisadas" type="button">Analisadas</button>
+          <button class="fontes-chip" data-fonte-filtro="nao_analisadas" type="button">Não analisadas</button>
+        </div>
+
+        <div class="fontes-lista" id="fontesLista">
+          <div class="loading">Carregando fontes…</div>
+        </div>
+
+        <div class="paginacao fontes-paginacao" id="fontesPaginacao"></div>
+      </section>
     </main>
 
     <!-- Modal de detalhe -->
@@ -287,6 +340,37 @@
           ✕
         </button>
         <div id="modalConteudo"></div>
+      </div>
+    </div>
+
+    <!-- Modal de denúncia de fonte -->
+    <div class="fd-overlay" id="fonteDenunciaOverlay">
+      <div class="fd-modal" role="dialog" aria-modal="true" aria-labelledby="fdTitulo">
+        <button class="fd-fechar" id="fonteDenunciaFechar" aria-label="Fechar">✕</button>
+        <h3 id="fdTitulo">Denunciar fonte</h3>
+        <p class="fd-dominio" id="fdDominio"></p>
+        <label class="fd-campo">
+          <span>Motivo da denúncia</span>
+          <select id="fdMotivo">
+            <option value="">Selecione um motivo…</option>
+            <option value="desinformacao">Publica desinformação / fake news</option>
+            <option value="sensacionalismo">Sensacionalismo / título enganoso</option>
+            <option value="sem_fontes">Não cita fontes confiáveis</option>
+            <option value="conteudo_ofensivo">Conteúdo ofensivo ou de ódio</option>
+            <option value="spam">Spam ou propaganda enganosa</option>
+            <option value="outro">Outro</option>
+          </select>
+        </label>
+        <label class="fd-campo">
+          <span>Comentário (opcional)</span>
+          <textarea id="fdComentario" maxlength="1000" rows="4"
+            placeholder="Conte mais sobre o problema desta fonte…"></textarea>
+        </label>
+        <p class="fd-status" id="fdStatus" aria-live="polite"></p>
+        <div class="fd-acoes">
+          <button class="fd-cancelar" id="fonteDenunciaCancelar" type="button">Cancelar</button>
+          <button class="fd-enviar" id="fonteDenunciaEnviar" type="button">Enviar denúncia</button>
+        </div>
       </div>
     </div>
 

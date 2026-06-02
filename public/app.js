@@ -172,6 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
   configurarAnimacoes();
   configurarAbas();
   configurarAoVivo();
+  configurarFontes();
 });
 
 let revealObserver = null;
@@ -1390,6 +1391,59 @@ function renderizarClaimsDetalhadas(claims) {
   `;
 }
 
+function nivelAvaliacaoFonteLabel(nivel) {
+  if (nivel === "denuncia") return "Fonte com denúncias";
+  if (nivel === "negativa") return "Fonte mal avaliada";
+  return "Fonte bem avaliada";
+}
+
+function mensagemAvaliacaoFonte(av) {
+  if (av?.mensagem) return av.mensagem;
+  const partes = [];
+  const likes = Number(av?.likes || 0);
+  const dislikes = Number(av?.dislikes || 0);
+  const denuncias = Number(av?.denuncias || 0);
+  if (likes > 0) partes.push(`${likes} ${likes === 1 ? "usuário gosta" : "usuários gostam"} dela`);
+  if (dislikes > 0) partes.push(`${dislikes} não ${dislikes === 1 ? "gosta" : "gostam"} dela`);
+  if (denuncias > 0) partes.push(`${denuncias} ${denuncias === 1 ? "denúncia" : "denúncias"}`);
+  return partes.join(" · ");
+}
+
+function renderizarAvaliacoesFontes(resultado) {
+  const lista = arraySeguro(resultado?.avaliacoesFontes).filter(
+    (av) => av && av.dominio,
+  );
+  if (!lista.length) return "";
+
+  return `
+    <section class="modal-fontes-alerta">
+      <p class="modal-section-title">Avaliações da comunidade sobre as fontes</p>
+      <div class="mfa-lista">
+        ${lista
+          .map((av) => {
+            const nivel = tokenClasse(av.nivel || "positiva");
+            return `
+            <div class="mfa-item mfa-${nivel}">
+              <div class="mfa-cab">
+                <a class="mfa-dominio" href="https://${escapeHTML(av.dominio)}" target="_blank" rel="noopener noreferrer">
+                  ${escapeHTML(av.dominio)}${av.principal ? `<span class="mfa-tag">fonte da notícia</span>` : ""}
+                </a>
+                <span class="mfa-nivel">${escapeHTML(nivelAvaliacaoFonteLabel(av.nivel))}</span>
+              </div>
+              <div class="mfa-numeros">
+                <span class="mfa-n mfa-n-like" title="Gostam">👍 ${Number(av.likes || 0)}</span>
+                <span class="mfa-n mfa-n-dislike" title="Não gostam">👎 ${Number(av.dislikes || 0)}</span>
+                ${Number(av.denuncias || 0) > 0 ? `<span class="mfa-n mfa-n-denuncia" title="Denúncias">⚑ ${Number(av.denuncias)}</span>` : ""}
+              </div>
+              <p class="mfa-msg">${escapeHTML(mensagemAvaliacaoFonte(av))}</p>
+            </div>`;
+          })
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
 function renderizarFontesDetalhadas(fontes) {
   const lista = normalizarFontesConsultadas(fontes);
   if (!lista.length) return "";
@@ -1406,10 +1460,18 @@ function renderizarFontesDetalhadas(fontes) {
           ? `<a class="modal-source-title" href="${escapeHTML(fonte.url)}" data-preview-title="${escapeHTML(label)}" target="_blank" rel="noopener noreferrer">${escapeHTML(label)}</a>`
           : `<strong class="modal-source-title">${escapeHTML(label)}</strong>`;
 
+        const av = fonte.avaliacaoComunidade;
+        const avBadge = av
+          ? `<span class="modal-source-aval modal-source-aval-${tokenClasse(av.nivel || "positiva")}" title="${escapeHTML(mensagemAvaliacaoFonte(av))}">
+               👍 ${Number(av.likes || 0)} · 👎 ${Number(av.dislikes || 0)}${Number(av.denuncias || 0) > 0 ? ` · ⚑ ${Number(av.denuncias)}` : ""}
+             </span>`
+          : "";
+
         return `
           <article class="modal-source-card">
             ${titulo}
             ${meta ? `<span>${escapeHTML(meta)}</span>` : ""}
+            ${avBadge}
             ${fonte.papelNaVerificacao ? `<p>${escapeHTML(fonte.papelNaVerificacao)}</p>` : ""}
             ${fonte.resumo ? `<p>${escapeHTML(fonte.resumo)}</p>` : ""}
           </article>
@@ -1473,6 +1535,7 @@ function renderizarModalAnalise(a) {
     <h2>${escapeHTML(titulo)}</h2>
     ${renderizarMetaDetalhe(resultado, a)}
     <a class="modal-url" href="${escapeHTML(a.url)}" data-preview-title="${escapeHTML(a.title)}" target="_blank" rel="noopener noreferrer">${escapeHTML(a.url)}</a>
+    ${renderizarAvaliacoesFontes(resultado)}
     ${renderizarAvisoAtualizacao(resultado.avisoAtualizacao || a.avisoAtualizacao)}
     ${score !== null && score !== undefined ? `
       <section class="modal-verdict modal-verdict-${tokenClasse(resultado.vereditoGeral || a.veracity)}">
@@ -1749,6 +1812,7 @@ function normalizarComentariosFeedback(comentarios = []) {
   if (!Array.isArray(comentarios)) return [];
   return comentarios
     .map((comentario) => ({
+      id: comentario?.id ?? null,
       reacao:
         comentario?.reacao === "like" || comentario?.reacao === "dislike"
           ? comentario.reacao
@@ -1761,6 +1825,12 @@ function normalizarComentariosFeedback(comentarios = []) {
       proprioUsuario: comentario?.proprioUsuario === true,
       editado: comentario?.editado === true,
       atualizadoEm: comentario?.atualizadoEm || "",
+      likes: Math.max(0, Number(comentario?.likes || 0)),
+      dislikes: Math.max(0, Number(comentario?.dislikes || 0)),
+      votoUsuario:
+        comentario?.votoUsuario === "like" || comentario?.votoUsuario === "dislike"
+          ? comentario.votoUsuario
+          : "",
     }))
     .filter((comentario) => comentario.comentario);
 }
@@ -1930,8 +2000,27 @@ function renderizarComentariosFeedback(comentarios = []) {
       const classe = comentario.proprioUsuario ? " proprio" : "";
       const reacaoClasse = tokenClasse(comentario.reacao || "opiniao");
       const iniciais = iniciaisUsuarioFeedback(autor);
+      const id = comentario.id;
+      const votos = id
+        ? `
+            <div class="mf-comment-votes" role="group" aria-label="Avaliar comentário">
+              <button type="button" class="mf-cv-btn mf-cv-like${comentario.votoUsuario === "like" ? " ativo" : ""}"
+                data-comentario-voto="like" data-comentario-id="${id}"
+                aria-pressed="${comentario.votoUsuario === "like"}" title="Curtir comentário">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                <span data-cv-likes>${comentario.likes}</span>
+              </button>
+              <button type="button" class="mf-cv-btn mf-cv-dislike${comentario.votoUsuario === "dislike" ? " ativo" : ""}"
+                data-comentario-voto="dislike" data-comentario-id="${id}"
+                aria-pressed="${comentario.votoUsuario === "dislike"}" title="Descurtir comentário">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="transform:rotate(180deg)"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                <span data-cv-dislikes>${comentario.dislikes}</span>
+              </button>
+            </div>
+          `
+        : "";
       return `
-        <article class="mf-comment mf-comment-${reacaoClasse}${classe}">
+        <article class="mf-comment mf-comment-${reacaoClasse}${classe}"${id ? ` data-comentario-row="${id}"` : ""}>
           <div class="mf-comment-avatar" aria-hidden="true">${escapeHTML(iniciais)}</div>
           <div class="mf-comment-body">
             <div class="mf-comment-head">
@@ -1950,12 +2039,15 @@ function renderizarComentariosFeedback(comentarios = []) {
               </div>
             </div>
             <p class="mf-comment-text">${escapeHTML(comentario.comentario)}</p>
-            ${comentario.proprioUsuario ? `
-              <button type="button" class="mf-btn-ghost mf-btn-edit-inline" data-feedback-editar>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Editar
-              </button>
-            ` : ""}
+            <div class="mf-comment-actions">
+              ${votos}
+              ${comentario.proprioUsuario ? `
+                <button type="button" class="mf-btn-ghost mf-btn-edit-inline" data-feedback-editar>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Editar
+                </button>
+              ` : ""}
+            </div>
           </div>
         </article>
       `;
@@ -1973,6 +2065,54 @@ function setComentariosFeedbackMensagem(section, mensagem) {
   const lista = section.querySelector("[data-feedback-comments]");
   if (!lista) return;
   lista.innerHTML = `<p class="mf-empty">${escapeHTML(mensagem)}</p>`;
+}
+
+async function votarComentario(section, comentarioId, reacao, auth) {
+  const id = Number(comentarioId);
+  if (!id || (reacao !== "like" && reacao !== "dislike")) return;
+
+  if (!auth?.logado || !auth.authToken) {
+    setStatusFeedback(section, "Entre na extensão para avaliar um comentário.", "erro");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/analises/comentario/voto", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ authToken: auth.authToken, comentarioId: id, reacao }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.erro || "Não foi possível avaliar o comentário.");
+    atualizarVotoComentarioUI(section, id, data);
+  } catch (err) {
+    setStatusFeedback(section, err.message || "Não foi possível avaliar agora.", "erro");
+  }
+}
+
+function atualizarVotoComentarioUI(section, comentarioId, data) {
+  const article = section.querySelector(
+    `.mf-comment[data-comentario-row="${comentarioId}"]`,
+  );
+  if (!article) return;
+
+  const likesEl = article.querySelector("[data-cv-likes]");
+  const dislikesEl = article.querySelector("[data-cv-dislikes]");
+  if (likesEl) likesEl.textContent = Number(data.likes || 0);
+  if (dislikesEl) dislikesEl.textContent = Number(data.dislikes || 0);
+
+  const likeBtn = article.querySelector(".mf-cv-like");
+  const dislikeBtn = article.querySelector(".mf-cv-dislike");
+  if (likeBtn) {
+    const on = data.votoUsuario === "like";
+    likeBtn.classList.toggle("ativo", on);
+    likeBtn.setAttribute("aria-pressed", String(on));
+  }
+  if (dislikeBtn) {
+    const on = data.votoUsuario === "dislike";
+    dislikeBtn.classList.toggle("ativo", on);
+    dislikeBtn.setAttribute("aria-pressed", String(on));
+  }
 }
 
 function aplicarFeedbackNaUI(section, feedback = {}, auth = feedbackAuthState) {
@@ -2125,6 +2265,17 @@ function configurarFeedbackNoticia(a) {
   const comentariosEl = section.querySelector("[data-feedback-comments]");
   if (comentariosEl) {
     comentariosEl.addEventListener("click", (event) => {
+      const votoBtn = event.target.closest("[data-comentario-voto]");
+      if (votoBtn) {
+        votarComentario(
+          section,
+          votoBtn.dataset.comentarioId,
+          votoBtn.dataset.comentarioVoto,
+          authAtual,
+        );
+        return;
+      }
+
       const editarBtn = event.target.closest("[data-feedback-editar]");
       if (!editarBtn) return;
       iniciarEdicaoFeedback(section, feedbackAtual, authAtual);
@@ -2519,6 +2670,504 @@ function escapeHTML(str) {
   return d.innerHTML;
 }
 
+// ─── Ranking de Fontes ───────────────────────────────────────────────────────
+const FONTES_POR_PAGINA = 10;
+let fontesCarregado = false;
+let fontesDados = [];
+let fonteDenunciaAtual = "";
+let fontesFiltro = "todas";
+let fontesBusca = "";
+let fontesPaginaAtual = 1;
+
+function configurarFontes() {
+  const refresh = document.getElementById("fontesRefresh");
+  if (refresh) refresh.addEventListener("click", () => carregarFontes(true));
+
+  const filtros = document.getElementById("fontesFiltros");
+  if (filtros) {
+    filtros.querySelectorAll(".fontes-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        if (chip.classList.contains("ativo")) return;
+        filtros
+          .querySelectorAll(".fontes-chip")
+          .forEach((c) => c.classList.remove("ativo"));
+        chip.classList.add("ativo");
+        fontesFiltro = chip.dataset.fonteFiltro || "todas";
+        fontesPaginaAtual = 1;
+        renderizarFontes(fontesDados);
+      });
+    });
+  }
+
+  const busca = document.getElementById("fontesBusca");
+  if (busca) {
+    busca.addEventListener("input", (e) => {
+      fontesBusca = normalizarTexto(e.target.value);
+      fontesPaginaAtual = 1;
+      renderizarFontes(fontesDados);
+    });
+  }
+
+  const lista = document.getElementById("fontesLista");
+  if (lista) {
+    lista.addEventListener("click", (event) => {
+      const voteBtn = event.target.closest("[data-fonte-voto]");
+      if (voteBtn) {
+        votarFonte(voteBtn.dataset.fonteDominio, voteBtn.dataset.fonteVoto);
+        return;
+      }
+      const denunciaBtn = event.target.closest("[data-fonte-denunciar]");
+      if (denunciaBtn) {
+        abrirDenunciaFonte(denunciaBtn.dataset.fonteDominio);
+      }
+    });
+  }
+
+  configurarModalDenuncia();
+}
+
+function iniciarFontes() {
+  if (!fontesCarregado) {
+    fontesCarregado = true;
+    carregarFontes();
+  }
+}
+
+function setFontesStatus(mensagem) {
+  const status = document.getElementById("fontesStatus");
+  if (status) status.textContent = mensagem;
+}
+
+function encontrarFonteCard(dominio) {
+  return (
+    Array.from(document.querySelectorAll(".fonte-card")).find(
+      (card) => card.dataset.fonteRow === dominio,
+    ) || null
+  );
+}
+
+async function carregarFontes(forcar = false) {
+  const lista = document.getElementById("fontesLista");
+  const status = document.getElementById("fontesStatus");
+  if (!lista) return;
+
+  if (status) status.textContent = "Carregando…";
+  if (forcar || !lista.querySelector(".fonte-card")) {
+    lista.innerHTML = `<div class="loading">Carregando fontes…</div>`;
+  }
+
+  try {
+    const auth = await solicitarAuthFeedback();
+    const params = new URLSearchParams();
+    if (auth?.authToken) params.set("authToken", auth.authToken);
+    const qs = params.toString();
+    const res = await fetch(`/api/fontes${qs ? `?${qs}` : ""}`);
+    if (!res.ok) throw new Error("Falha ao carregar fontes");
+    const data = await res.json();
+    fontesDados = Array.isArray(data.fontes) ? data.fontes : [];
+    renderizarFontes(fontesDados);
+    if (status) {
+      status.textContent = `${fontesDados.length} ${fontesDados.length === 1 ? "fonte" : "fontes"}`;
+    }
+  } catch (err) {
+    console.error("[fontes] erro:", err);
+    lista.innerHTML = `
+      <div class="vazio"><p>Não foi possível carregar o ranking agora.</p></div>`;
+    if (status) status.textContent = "Erro ao carregar";
+  }
+}
+
+function filtrarFontes(fontes) {
+  let resultado = fontes;
+
+  if (fontesFiltro === "analisadas") {
+    resultado = resultado.filter((f) => f.analisada);
+  } else if (fontesFiltro === "nao_analisadas") {
+    resultado = resultado.filter((f) => !f.analisada);
+  }
+
+  if (fontesBusca) {
+    resultado = resultado.filter((f) =>
+      normalizarTexto(f.dominio).includes(fontesBusca),
+    );
+  }
+
+  return resultado;
+}
+
+function renderizarFontesStats(fontes) {
+  const el = document.getElementById("fontesStats");
+  if (!el) return;
+
+  const totalFontes = fontes.length;
+  const totalAnalisadas = fontes.filter((f) => f.analisada).length;
+  const totalDenuncias = fontes.reduce((s, f) => s + (f.denuncias || 0), 0);
+
+  el.innerHTML = `
+    <div class="fontes-stat">
+      <span class="fontes-stat-num">${totalFontes}</span>
+      <span class="fontes-stat-label">Fontes</span>
+    </div>
+    <div class="fontes-stat">
+      <span class="fontes-stat-num">${totalAnalisadas}</span>
+      <span class="fontes-stat-label">Analisadas</span>
+    </div>
+    <div class="fontes-stat">
+      <span class="fontes-stat-num">${totalDenuncias}</span>
+      <span class="fontes-stat-label">Denúncias</span>
+    </div>
+  `;
+}
+
+function renderizarFontes(fontes) {
+  const lista = document.getElementById("fontesLista");
+  if (!lista) return;
+  renderizarFontesStats(fontes);
+
+  if (!fontes.length) {
+    lista.innerHTML = `
+      <div class="vazio"><p>Nenhuma fonte cadastrada ainda.</p></div>`;
+    renderizarFontesPaginacao(0);
+    return;
+  }
+
+  const visiveis = filtrarFontes(fontes);
+  if (!visiveis.length) {
+    const msg = fontesBusca
+      ? "Nenhuma fonte encontrada para esta busca."
+      : `Nenhuma fonte ${
+          fontesFiltro === "analisadas" ? "analisada" : "sem análise"
+        } no momento.`;
+    lista.innerHTML = `<div class="vazio"><p>${escapeHTML(msg)}</p></div>`;
+    renderizarFontesPaginacao(0);
+    return;
+  }
+
+  const totalPaginas = Math.ceil(visiveis.length / FONTES_POR_PAGINA);
+  if (fontesPaginaAtual > totalPaginas) fontesPaginaAtual = totalPaginas;
+  if (fontesPaginaAtual < 1) fontesPaginaAtual = 1;
+
+  const inicio = (fontesPaginaAtual - 1) * FONTES_POR_PAGINA;
+  const pagina = visiveis.slice(inicio, inicio + FONTES_POR_PAGINA);
+
+  lista.innerHTML = pagina
+    .map((fonte, i) => criarFonteCardHTML(fonte, inicio + i + 1))
+    .join("");
+
+  renderizarFontesPaginacao(totalPaginas);
+}
+
+function renderizarFontesPaginacao(totalPaginas) {
+  const pag = document.getElementById("fontesPaginacao");
+  if (!pag) return;
+  pag.innerHTML = "";
+
+  if (totalPaginas <= 1) return;
+
+  const btnAnterior = document.createElement("button");
+  btnAnterior.className = "pag-btn";
+  btnAnterior.textContent = "←";
+  btnAnterior.disabled = fontesPaginaAtual === 1;
+  btnAnterior.addEventListener("click", () => irFontesPagina(fontesPaginaAtual - 1));
+  pag.appendChild(btnAnterior);
+
+  for (let p = 1; p <= totalPaginas; p++) {
+    if (
+      p === 1 ||
+      p === totalPaginas ||
+      (p >= fontesPaginaAtual - 1 && p <= fontesPaginaAtual + 1)
+    ) {
+      const btn = document.createElement("button");
+      btn.className = "pag-btn" + (p === fontesPaginaAtual ? " ativo" : "");
+      btn.textContent = p;
+      btn.addEventListener("click", () => irFontesPagina(p));
+      pag.appendChild(btn);
+    } else if (p === fontesPaginaAtual - 2 || p === fontesPaginaAtual + 2) {
+      const ell = document.createElement("span");
+      ell.textContent = "…";
+      ell.style.cssText =
+        "font-family:var(--font-mono);padding:0 0.3rem;opacity:.5";
+      pag.appendChild(ell);
+    }
+  }
+
+  const btnProx = document.createElement("button");
+  btnProx.className = "pag-btn";
+  btnProx.textContent = "→";
+  btnProx.disabled = fontesPaginaAtual === totalPaginas;
+  btnProx.addEventListener("click", () => irFontesPagina(fontesPaginaAtual + 1));
+  pag.appendChild(btnProx);
+}
+
+function irFontesPagina(p) {
+  fontesPaginaAtual = p;
+  renderizarFontes(fontesDados);
+  const secao = document.getElementById("fontesView");
+  if (secao) {
+    window.scrollTo({ top: secao.offsetTop - 80, behavior: "smooth" });
+  }
+}
+
+function criarFonteCardHTML(f, posicao) {
+  const dominio = escapeHTML(f.dominio);
+  const likeAtivo = f.reacaoUsuario === "like" ? " ativo" : "";
+  const dislikeAtivo = f.reacaoUsuario === "dislike" ? " ativo" : "";
+  const denunciaInfo =
+    f.denuncias > 0
+      ? `<span class="fonte-denuncia-count" title="${f.denuncias} denúncia(s)">⚑ ${f.denuncias}</span>`
+      : "";
+  const semAnaliseTag = f.analisada
+    ? ""
+    : `<span class="fonte-tag-sem-analise">sem análises</span>`;
+  const logoUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(f.dominio)}&sz=64`;
+  const iniciais = escapeHTML(f.dominio.charAt(0).toUpperCase() || "?");
+  const siteUrl = `https://${dominio}`;
+
+  return `
+    <article class="fonte-card${f.analisada ? "" : " fonte-card-sem-analise"}" data-fonte-row="${dominio}">
+      <div class="fonte-rank">${posicao}</div>
+      <a class="fonte-logo" href="${siteUrl}" target="_blank" rel="noopener noreferrer"
+        title="Abrir ${dominio} em nova aba" aria-label="Abrir ${dominio} em nova aba">
+        <span class="fonte-logo-fallback">${iniciais}</span>
+        <img src="${logoUrl}" alt="" loading="lazy"
+          onload="this.parentElement.classList.add('tem-logo')"
+          onerror="this.remove()" />
+      </a>
+      <div class="fonte-main">
+        <div class="fonte-head">
+          <a class="fonte-dominio" href="${siteUrl}" target="_blank" rel="noopener noreferrer"
+            title="Abrir ${dominio} em nova aba">${dominio}<span class="fonte-ext" aria-hidden="true">↗</span></a>
+          ${semAnaliseTag}
+          ${denunciaInfo}
+        </div>
+        <div class="fonte-metrics">
+          ${
+            f.analisada
+              ? `<span>${f.totalAnalises} análise${f.totalAnalises === 1 ? "" : "s"}</span>
+          <span class="fonte-veracidade">
+            <span class="fv-true" title="Verdadeiras">✅ ${f.verdadeiras}</span>
+            <span class="fv-mixed" title="Mistas">⚠️ ${f.mistas}</span>
+            <span class="fv-false" title="Falsas">❌ ${f.falsas}</span>
+          </span>
+          <span title="Confiabilidade média">${f.mediaScore}% conf.</span>`
+              : `<span>Nenhuma notícia desta fonte foi analisada ainda</span>`
+          }
+        </div>
+      </div>
+      <div class="fonte-acoes">
+        <div class="fonte-votos">
+          <button type="button" class="fonte-voto fonte-like${likeAtivo}"
+            data-fonte-voto="like" data-fonte-dominio="${dominio}"
+            aria-pressed="${f.reacaoUsuario === "like"}" title="Confiável">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            <span data-fonte-likes>${f.likes}</span>
+          </button>
+          <button type="button" class="fonte-voto fonte-dislike${dislikeAtivo}"
+            data-fonte-voto="dislike" data-fonte-dominio="${dominio}"
+            aria-pressed="${f.reacaoUsuario === "dislike"}" title="Pouco confiável">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="transform:rotate(180deg)"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            <span data-fonte-dislikes>${f.dislikes}</span>
+          </button>
+        </div>
+        <button type="button" class="fonte-denunciar"
+          data-fonte-denunciar data-fonte-dominio="${dominio}">⚑ Denunciar</button>
+      </div>
+    </article>
+  `;
+}
+
+async function votarFonte(dominio, reacao) {
+  if (!dominio || (reacao !== "like" && reacao !== "dislike")) return;
+
+  const auth = await solicitarAuthFeedback();
+  if (!auth?.logado || !auth.authToken) {
+    setFontesStatus("Entre na extensão para avaliar uma fonte.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/fontes/voto", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ authToken: auth.authToken, dominio, reacao }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.erro || "Não foi possível avaliar.");
+    atualizarFonteVotoCard(dominio, data);
+  } catch (err) {
+    setFontesStatus(err.message || "Não foi possível avaliar agora.");
+  }
+}
+
+function atualizarFonteVotoCard(dominio, data) {
+  const item = fontesDados.find((f) => f.dominio === dominio);
+  if (item) {
+    item.likes = Number(data.likes || 0);
+    item.dislikes = Number(data.dislikes || 0);
+    item.saldo = Number(data.saldo || 0);
+    item.reacaoUsuario = data.reacaoUsuario || "";
+  }
+
+  const card = encontrarFonteCard(dominio);
+  if (!card) return;
+
+  const likesEl = card.querySelector("[data-fonte-likes]");
+  const dislikesEl = card.querySelector("[data-fonte-dislikes]");
+  if (likesEl) likesEl.textContent = Number(data.likes || 0);
+  if (dislikesEl) dislikesEl.textContent = Number(data.dislikes || 0);
+
+  const likeBtn = card.querySelector(".fonte-like");
+  const dislikeBtn = card.querySelector(".fonte-dislike");
+  if (likeBtn) {
+    const on = data.reacaoUsuario === "like";
+    likeBtn.classList.toggle("ativo", on);
+    likeBtn.setAttribute("aria-pressed", String(on));
+  }
+  if (dislikeBtn) {
+    const on = data.reacaoUsuario === "dislike";
+    dislikeBtn.classList.toggle("ativo", on);
+    dislikeBtn.setAttribute("aria-pressed", String(on));
+  }
+}
+
+function configurarModalDenuncia() {
+  const overlay = document.getElementById("fonteDenunciaOverlay");
+  if (!overlay) return;
+
+  const fechar = document.getElementById("fonteDenunciaFechar");
+  const cancelar = document.getElementById("fonteDenunciaCancelar");
+  const enviar = document.getElementById("fonteDenunciaEnviar");
+
+  if (fechar) fechar.addEventListener("click", fecharDenunciaFonte);
+  if (cancelar) cancelar.addEventListener("click", fecharDenunciaFonte);
+  if (enviar) enviar.addEventListener("click", enviarDenunciaFonte);
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) fecharDenunciaFonte();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("aberta")) {
+      fecharDenunciaFonte();
+    }
+  });
+}
+
+async function abrirDenunciaFonte(dominio) {
+  if (!dominio) return;
+
+  const auth = await solicitarAuthFeedback();
+  if (!auth?.logado || !auth.authToken) {
+    setFontesStatus("Entre na extensão para denunciar uma fonte.");
+    return;
+  }
+
+  fonteDenunciaAtual = dominio;
+  const overlay = document.getElementById("fonteDenunciaOverlay");
+  const dominioEl = document.getElementById("fdDominio");
+  const motivo = document.getElementById("fdMotivo");
+  const comentario = document.getElementById("fdComentario");
+  const status = document.getElementById("fdStatus");
+
+  if (dominioEl) dominioEl.textContent = dominio;
+  if (motivo) motivo.value = "";
+  if (comentario) comentario.value = "";
+  if (status) {
+    status.textContent = "";
+    status.dataset.tipo = "";
+  }
+
+  if (overlay) overlay.classList.add("aberta");
+  document.body.style.overflow = "hidden";
+}
+
+function fecharDenunciaFonte() {
+  const overlay = document.getElementById("fonteDenunciaOverlay");
+  if (overlay) overlay.classList.remove("aberta");
+  document.body.style.overflow = "";
+  fonteDenunciaAtual = "";
+}
+
+async function enviarDenunciaFonte() {
+  const status = document.getElementById("fdStatus");
+  const enviar = document.getElementById("fonteDenunciaEnviar");
+  const motivo = document.getElementById("fdMotivo")?.value || "";
+  const comentario = document.getElementById("fdComentario")?.value || "";
+
+  function setStatus(mensagem, tipo = "") {
+    if (status) {
+      status.textContent = mensagem;
+      status.dataset.tipo = tipo;
+    }
+  }
+
+  if (!fonteDenunciaAtual) return;
+  if (!motivo) {
+    setStatus("Selecione um motivo para a denúncia.", "erro");
+    return;
+  }
+
+  const auth = await solicitarAuthFeedback();
+  if (!auth?.logado || !auth.authToken) {
+    setStatus("Entre na extensão para denunciar.", "erro");
+    return;
+  }
+
+  if (enviar) enviar.disabled = true;
+  setStatus("Enviando denúncia…");
+
+  try {
+    const res = await fetch("/api/fontes/denuncia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        authToken: auth.authToken,
+        dominio: fonteDenunciaAtual,
+        motivo,
+        comentario,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.erro || "Não foi possível denunciar.");
+
+    const item = fontesDados.find((f) => f.dominio === fonteDenunciaAtual);
+    const totalDenuncias = Number(
+      data.denuncias ?? (item ? item.denuncias + 1 : 1),
+    );
+    if (item) item.denuncias = totalDenuncias;
+    atualizarFonteDenunciaCard(fonteDenunciaAtual, totalDenuncias);
+    renderizarFontesStats(fontesDados);
+
+    setStatus(data.mensagem || "Denúncia registrada. Obrigado!", "sucesso");
+    setTimeout(fecharDenunciaFonte, 1200);
+  } catch (err) {
+    setStatus(err.message || "Não foi possível denunciar agora.", "erro");
+  } finally {
+    if (enviar) enviar.disabled = false;
+  }
+}
+
+function atualizarFonteDenunciaCard(dominio, denuncias) {
+  const card = encontrarFonteCard(dominio);
+  if (!card) return;
+
+  const head = card.querySelector(".fonte-head");
+  let countEl = card.querySelector(".fonte-denuncia-count");
+  const total = Number(denuncias || 0);
+
+  if (total <= 0) {
+    if (countEl) countEl.remove();
+    return;
+  }
+
+  if (!countEl) {
+    countEl = document.createElement("span");
+    countEl.className = "fonte-denuncia-count";
+    if (head) head.appendChild(countEl);
+  }
+  countEl.title = `${total} denúncia(s)`;
+  countEl.textContent = `⚑ ${total}`;
+}
+
 // ─── Abas (Análises / Ao Vivo) ───────────────────────────────────────────────
 function configurarAbas() {
   const tabs = document.getElementById("tabs");
@@ -2535,14 +3184,23 @@ function configurarAbas() {
 
 function trocarView(view) {
   const aoVivo = view === "aovivo";
+  const fontes = view === "fontes";
   document.body.classList.toggle("view-aovivo", aoVivo);
-  const secao = document.getElementById("aoVivo");
-  if (secao) secao.hidden = !aoVivo;
+  document.body.classList.toggle("view-fontes", fontes);
+
+  const secaoAoVivo = document.getElementById("aoVivo");
+  if (secaoAoVivo) secaoAoVivo.hidden = !aoVivo;
+  const secaoFontes = document.getElementById("fontesView");
+  if (secaoFontes) secaoFontes.hidden = !fontes;
 
   if (aoVivo) {
     iniciarAoVivo();
   } else {
     pararAutoRefreshAoVivo();
+  }
+
+  if (fontes) {
+    iniciarFontes();
   }
 }
 
@@ -2785,6 +3443,7 @@ function normalizarFontesConsultadas(fontes) {
           "",
         resumoEvidencia: fonte.resumoEvidencia || fonte.resumo_evidencia || "",
         relacaoComClaim: fonte.relacaoComClaim || fonte.relacao_com_claim || "",
+        avaliacaoComunidade: fonte.avaliacaoComunidade || null,
       };
     }
 

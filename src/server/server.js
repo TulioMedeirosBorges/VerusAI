@@ -5,10 +5,13 @@ const cors = require("cors");
 const nodemailer = require("nodemailer");
 const path = require("path");
 const crypto = require("crypto");
+const {
+  anexarAvaliacoesDeFontes,
+} = require("./services/avaliarFontesNoResultado.js");
 require("dotenv").config();
 
 const app = express();
-const db = new Database("usuarios.db");
+const db = new Database("verusai.db");
 const PASSWORD_RESET_TOKEN_TTL_MS = 5 * 60 * 1000;
 const PASSWORD_RESET_TOKEN_CLEANUP_MS = 60 * 1000;
 
@@ -77,6 +80,38 @@ db.exec(`CREATE TABLE IF NOT EXISTS noticia_feedback (
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
   atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(url, cliente_id)
+)`);
+
+db.exec(`CREATE TABLE IF NOT EXISTS fonte_feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  dominio TEXT NOT NULL,
+  usuario_email TEXT NOT NULL,
+  reacao TEXT DEFAULT '',
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(dominio, usuario_email)
+)`);
+
+db.exec(`CREATE TABLE IF NOT EXISTS fonte_denuncias (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  dominio TEXT NOT NULL,
+  usuario_email TEXT NOT NULL,
+  usuario_nome TEXT DEFAULT '',
+  motivo TEXT DEFAULT '',
+  comentario TEXT DEFAULT '',
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(dominio, usuario_email)
+)`);
+
+db.exec(`CREATE TABLE IF NOT EXISTS comentario_votos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  comentario_id INTEGER NOT NULL,
+  usuario_email TEXT NOT NULL,
+  reacao TEXT DEFAULT '',
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(comentario_id, usuario_email)
 )`);
 
 try {
@@ -447,12 +482,19 @@ function montarFeedbackPublico(row, usuarioEmail = "") {
     normalizarEmailUsuario(email) === normalizarEmailUsuario(usuarioEmail);
 
   return {
+    id: row.id ?? null,
     reacao: row.reacao || "",
     comentario: row.comentario || "",
     usuarioNome: normalizarNomeUsuario(row.usuario_nome, email),
     proprioUsuario,
     editado: Boolean(row.editado) || datasDiferentesFeedback(row.criado_em, row.atualizado_em),
     atualizadoEm: row.atualizado_em || row.criado_em || "",
+    likes: Number(row.likes || 0),
+    dislikes: Number(row.dislikes || 0),
+    votoUsuario:
+      row.voto_usuario === "like" || row.voto_usuario === "dislike"
+        ? row.voto_usuario
+        : "",
   };
 }
 
@@ -473,18 +515,39 @@ function obterComentariosFeedback(url, usuarioEmail) {
   if (!url) return [];
   const rows = db
     .prepare(
-      `SELECT cliente_id, usuario_email, usuario_nome, reacao, comentario, editado, criado_em, atualizado_em
-       FROM noticia_feedback
-       WHERE url = ?
-         AND NULLIF(TRIM(comentario), '') IS NOT NULL
-       ORDER BY julianday(atualizado_em) DESC, id DESC
+      `SELECT nf.id, nf.cliente_id, nf.usuario_email, nf.usuario_nome, nf.reacao,
+              nf.comentario, nf.editado, nf.criado_em, nf.atualizado_em,
+              COALESCE(SUM(CASE WHEN cv.reacao = 'like' THEN 1 ELSE 0 END), 0) AS likes,
+              COALESCE(SUM(CASE WHEN cv.reacao = 'dislike' THEN 1 ELSE 0 END), 0) AS dislikes,
+              MAX(CASE WHEN cv.usuario_email = ? THEN cv.reacao ELSE NULL END) AS voto_usuario
+       FROM noticia_feedback nf
+       LEFT JOIN comentario_votos cv ON cv.comentario_id = nf.id
+       WHERE nf.url = ?
+         AND NULLIF(TRIM(nf.comentario), '') IS NOT NULL
+       GROUP BY nf.id
+       ORDER BY julianday(nf.atualizado_em) DESC, nf.id DESC
        LIMIT 50`,
     )
-    .all(url);
+    .all(usuarioEmail || "", url);
 
   return rows
     .map((row) => montarFeedbackPublico(row, usuarioEmail))
     .filter((item) => item?.comentario);
+}
+
+function obterVotosComentario(comentarioId) {
+  const votos = db
+    .prepare(
+      `SELECT
+         SUM(CASE WHEN reacao = 'like' THEN 1 ELSE 0 END) AS likes,
+         SUM(CASE WHEN reacao = 'dislike' THEN 1 ELSE 0 END) AS dislikes
+       FROM comentario_votos WHERE comentario_id = ?`,
+    )
+    .get(comentarioId);
+  return {
+    likes: Number(votos?.likes || 0),
+    dislikes: Number(votos?.dislikes || 0),
+  };
 }
 
 function dominioDaUrl(value) {
@@ -1220,7 +1283,12 @@ function montarAnalisePublica(row, incluirResultado = false) {
     avisoAtualizacao: buildFinal.avisoAtualizacao || null,
   };
 
-  if (incluirResultado) analise.resultado = buildFinal;
+  if (incluirResultado) {
+    // Recalcula as avaliações da comunidade ao exibir o detalhe, para o
+    // alerta refletir os votos/denúncias mais recentes.
+    anexarAvaliacoesDeFontes(buildFinal, obterAvaliacaoFonteDominio);
+    analise.resultado = buildFinal;
+  }
   return analise;
 }
 
@@ -1267,6 +1335,10 @@ function salvarAnaliseNoCache(resultado, pageData = {}) {
     urlOriginal: destinoUrl,
     salvoEm: new Date().toISOString(),
   };
+
+  // Após o buildFinal: verifica se as fontes (sites de notícia) do resultado
+  // têm avaliações da comunidade e anexa o alerta a cada uma.
+  anexarAvaliacoesDeFontes(resultadoFinal, obterAvaliacaoFonteDominio);
 
   if (preparado.removerUrlAnterior) {
     db.prepare("DELETE FROM cache_analises WHERE url = ?").run(
@@ -2056,6 +2128,563 @@ app.post("/api/analises/feedback", (req, res) => {
       ok: false,
       erro: "Nao foi possivel salvar a opiniao.",
     });
+  }
+});
+
+app.post("/api/analises/comentario/voto", (req, res) => {
+  const sessao = obterSessaoUsuario(req.body?.authToken);
+  const comentarioId = Number(req.body?.comentarioId);
+  const reacao = normalizarReacaoFeedback(req.body?.reacao);
+
+  if (!sessao) {
+    return res.status(401).json({
+      ok: false,
+      erro: "Entre na extensão para avaliar um comentário.",
+    });
+  }
+  if (!Number.isInteger(comentarioId) || comentarioId <= 0) {
+    return res.status(400).json({ ok: false, erro: "Comentário inválido." });
+  }
+  if (!reacao) {
+    return res
+      .status(400)
+      .json({ ok: false, erro: "Escolha like ou dislike." });
+  }
+
+  const comentario = db
+    .prepare("SELECT id FROM noticia_feedback WHERE id = ?")
+    .get(comentarioId);
+  if (!comentario) {
+    return res
+      .status(404)
+      .json({ ok: false, erro: "Comentário não encontrado." });
+  }
+
+  try {
+    const existente = db
+      .prepare(
+        "SELECT reacao FROM comentario_votos WHERE comentario_id = ? AND usuario_email = ?",
+      )
+      .get(comentarioId, sessao.email);
+
+    let votoUsuario = reacao;
+    if (existente && existente.reacao === reacao) {
+      // Clicar de novo na mesma reação remove o voto (toggle).
+      db.prepare(
+        "DELETE FROM comentario_votos WHERE comentario_id = ? AND usuario_email = ?",
+      ).run(comentarioId, sessao.email);
+      votoUsuario = "";
+    } else {
+      db.prepare(
+        `INSERT INTO comentario_votos (comentario_id, usuario_email, reacao)
+         VALUES (?, ?, ?)
+         ON CONFLICT(comentario_id, usuario_email) DO UPDATE SET
+           reacao = excluded.reacao,
+           atualizado_em = CURRENT_TIMESTAMP`,
+      ).run(comentarioId, sessao.email, reacao);
+    }
+
+    res.json({
+      ok: true,
+      comentarioId,
+      votoUsuario,
+      ...obterVotosComentario(comentarioId),
+    });
+  } catch (err) {
+    console.error("[/api/analises/comentario/voto] erro:", err);
+    res
+      .status(500)
+      .json({ ok: false, erro: "Não foi possível avaliar o comentário." });
+  }
+});
+
+// ── RANKING / DENÚNCIA DE FONTES (veículos) ──────────────────────────────────
+
+const MOTIVOS_DENUNCIA_FONTE = new Set([
+  "desinformacao",
+  "sensacionalismo",
+  "sem_fontes",
+  "conteudo_ofensivo",
+  "spam",
+  "outro",
+]);
+
+// Redes sociais / plataformas que NÃO são sites de notícia — ficam fora do ranking.
+const DOMINIOS_NAO_NOTICIA = new Set([
+  "instagram.com",
+  "facebook.com",
+  "fb.com",
+  "twitter.com",
+  "x.com",
+  "youtube.com",
+  "youtu.be",
+  "tiktok.com",
+  "kwai.com",
+  "whatsapp.com",
+  "wa.me",
+  "t.me",
+  "telegram.org",
+  "telegram.me",
+  "linkedin.com",
+  "reddit.com",
+  "pinterest.com",
+  "threads.net",
+  "snapchat.com",
+  "twitch.tv",
+  "discord.com",
+  "discord.gg",
+]);
+
+// Veículos de notícia conhecidos — aparecem no ranking mesmo sem análise.
+// A ordem reflete a fama/popularidade (usada como critério de desempate).
+// Não há limite: para incluir mais fontes, basta adicioná-las nesta lista.
+const FONTES_NOTICIA_CONHECIDAS = [
+  // ── Grandes portais nacionais ──
+  "g1.globo.com",
+  "uol.com.br",
+  "folha.uol.com.br",
+  "estadao.com.br",
+  "cnnbrasil.com.br",
+  "r7.com",
+  "terra.com.br",
+  "metropoles.com",
+  "oglobo.globo.com",
+  "veja.abril.com.br",
+  "band.uol.com.br",
+  "ig.com.br",
+  "msn.com",
+  // ── Economia / negócios ──
+  "exame.com",
+  "infomoney.com.br",
+  "valor.globo.com",
+  "moneytimes.com.br",
+  "seudinheiro.com",
+  "investnews.com.br",
+  // ── Jornais e revistas ──
+  "gazetadopovo.com.br",
+  "correiobraziliense.com.br",
+  "jovempan.com.br",
+  "istoe.com.br",
+  "cartacapital.com.br",
+  "poder360.com.br",
+  "em.com.br",
+  "opovo.com.br",
+  "agenciabrasil.ebc.com.br",
+  "brasildefato.com.br",
+  "revistaforum.com.br",
+  "oantagonista.com.br",
+  "congressoemfoco.uol.com.br",
+  "jb.com.br",
+  "diariodopoder.com.br",
+  // ── Regionais ──
+  "gauchazh.clicrbs.com.br",
+  "nsctotal.com.br",
+  "diariodonordeste.verdesmares.com.br",
+  "otempo.com.br",
+  "agazeta.com.br",
+  "atribuna.com.br",
+  "diariodepernambuco.com.br",
+  "jornaldebrasilia.com.br",
+  "cbn.globoradio.globo.com",
+  // ── Agências de checagem ──
+  "aosfatos.org",
+  "lupa.uol.com.br",
+  "projetocomprova.com.br",
+  "e-farsas.com",
+  "boatos.org",
+  // ── Tecnologia / ciência ──
+  "tecmundo.com.br",
+  "olhardigital.com.br",
+  "canaltech.com.br",
+  "tecnoblog.net",
+  "tilt.uol.com.br",
+  "revistapesquisa.fapesp.br",
+  // ── Esportes ──
+  "ge.globo.com",
+  "lance.com.br",
+  "espn.com.br",
+  // ── Internacionais ──
+  "bbc.com",
+  "cnn.com",
+  "reuters.com",
+  "apnews.com",
+  "nytimes.com",
+  "theguardian.com",
+  "washingtonpost.com",
+  "elpais.com",
+  "dw.com",
+  "france24.com",
+  "aljazeera.com",
+  "lemonde.fr",
+  "ft.com",
+  "wsj.com",
+  "bloomberg.com",
+  "forbes.com",
+  "observador.pt",
+];
+
+// Índice de fama por domínio (menor = mais famoso).
+const FAMA_FONTE = new Map(
+  FONTES_NOTICIA_CONHECIDAS.map((dominio, i) => [dominio, i]),
+);
+
+function ehDominioNaoNoticia(dominio) {
+  if (!dominio) return true;
+  if (DOMINIOS_NAO_NOTICIA.has(dominio)) return true;
+  // Pega subdomínios também (ex.: m.facebook.com, l.instagram.com).
+  return Array.from(DOMINIOS_NAO_NOTICIA).some((bloqueado) =>
+    dominio.endsWith(`.${bloqueado}`),
+  );
+}
+
+function normalizarDominioFonte(value) {
+  const texto = String(value || "").trim().toLowerCase();
+  if (!texto) return "";
+  // Aceita tanto um domínio puro quanto uma URL completa.
+  const comoUrl = normalizarUrlPublica(
+    /^https?:\/\//i.test(texto) ? texto : `https://${texto}`,
+  );
+  const dominio = comoUrl ? dominioDaUrl(comoUrl) : "";
+  return (dominio || texto.replace(/^www\./, ""))
+    .replace(/[^a-z0-9.\-:]/g, "")
+    .slice(0, 120);
+}
+
+function normalizarMotivoDenuncia(value) {
+  const motivo = String(value || "").trim().toLowerCase();
+  return MOTIVOS_DENUNCIA_FONTE.has(motivo) ? motivo : "";
+}
+
+function obterResumoFonte(dominio) {
+  const votos = db
+    .prepare(
+      `SELECT
+         SUM(CASE WHEN reacao = 'like' THEN 1 ELSE 0 END) AS likes,
+         SUM(CASE WHEN reacao = 'dislike' THEN 1 ELSE 0 END) AS dislikes
+       FROM fonte_feedback WHERE dominio = ?`,
+    )
+    .get(dominio);
+  const denuncias = db
+    .prepare("SELECT COUNT(*) AS total FROM fonte_denuncias WHERE dominio = ?")
+    .get(dominio);
+
+  const likes = Number(votos?.likes || 0);
+  const dislikes = Number(votos?.dislikes || 0);
+  return {
+    likes,
+    dislikes,
+    saldo: likes - dislikes,
+    denuncias: Number(denuncias?.total || 0),
+  };
+}
+
+// Lookup usado pelo avaliarFontesNoResultado: retorna a avaliação da
+// comunidade para um domínio, ou null quando o site não tem avaliação.
+function obterAvaliacaoFonteDominio(dominio) {
+  const normalizado = normalizarDominioFonte(dominio);
+  if (!normalizado) return null;
+  const resumo = obterResumoFonte(normalizado);
+  if (!resumo.likes && !resumo.dislikes && !resumo.denuncias) return null;
+  return {
+    likes: resumo.likes,
+    dislikes: resumo.dislikes,
+    denuncias: resumo.denuncias,
+  };
+}
+
+app.get("/api/fontes", (req, res) => {
+  const sessao = obterSessaoUsuario(req.query.authToken);
+  const usuarioEmail = sessao?.email || "";
+
+  // 1. Agrega as análises por domínio (veículo de notícia).
+  const rows = db
+    .prepare("SELECT url, veredicto, score FROM cache_analises")
+    .all();
+  const mapa = new Map();
+  function garantirFonte(dominio) {
+    if (!mapa.has(dominio)) {
+      mapa.set(dominio, {
+        dominio,
+        totalAnalises: 0,
+        verdadeiras: 0,
+        falsas: 0,
+        mistas: 0,
+        somaScore: 0,
+      });
+    }
+    return mapa.get(dominio);
+  }
+
+  rows.forEach((row) => {
+    const dominio = dominioDaUrl(row.url);
+    if (!dominio || ehDominioNaoNoticia(dominio)) return;
+    const fonte = garantirFonte(dominio);
+    fonte.totalAnalises += 1;
+    if (row.veredicto === "true") fonte.verdadeiras += 1;
+    else if (row.veredicto === "false") fonte.falsas += 1;
+    else fonte.mistas += 1;
+    fonte.somaScore += Number(row.score || 0);
+  });
+
+  // Semeia o ranking com veículos de notícia conhecidos (mesmo sem análise).
+  FONTES_NOTICIA_CONHECIDAS.forEach((dominio) => {
+    if (!ehDominioNaoNoticia(dominio)) garantirFonte(dominio);
+  });
+
+  // 2. Likes / dislikes por domínio.
+  const votosMapa = new Map();
+  db.prepare(
+    `SELECT dominio,
+       SUM(CASE WHEN reacao = 'like' THEN 1 ELSE 0 END) AS likes,
+       SUM(CASE WHEN reacao = 'dislike' THEN 1 ELSE 0 END) AS dislikes
+     FROM fonte_feedback GROUP BY dominio`,
+  )
+    .all()
+    .forEach((v) => votosMapa.set(v.dominio, v));
+
+  // 3. Denúncias por domínio.
+  const denunciaMapa = new Map();
+  db.prepare(
+    "SELECT dominio, COUNT(*) AS total FROM fonte_denuncias GROUP BY dominio",
+  )
+    .all()
+    .forEach((d) => denunciaMapa.set(d.dominio, Number(d.total || 0)));
+
+  // 4. Reação do usuário logado (se houver).
+  const reacoesUsuario = new Map();
+  if (usuarioEmail) {
+    db.prepare(
+      "SELECT dominio, reacao FROM fonte_feedback WHERE usuario_email = ?",
+    )
+      .all(usuarioEmail)
+      .forEach((m) => reacoesUsuario.set(m.dominio, m.reacao));
+  }
+
+  // Inclui domínios que só têm votos/denúncias (sem análise no cache).
+  votosMapa.forEach((_, dominio) => {
+    if (!ehDominioNaoNoticia(dominio)) garantirFonte(dominio);
+  });
+  denunciaMapa.forEach((_, dominio) => {
+    if (!ehDominioNaoNoticia(dominio)) garantirFonte(dominio);
+  });
+
+  const fontes = Array.from(mapa.values()).map((fonte) => {
+    const votos = votosMapa.get(fonte.dominio) || {};
+    const likes = Number(votos.likes || 0);
+    const dislikes = Number(votos.dislikes || 0);
+    return {
+      dominio: fonte.dominio,
+      analisada: fonte.totalAnalises > 0,
+      totalAnalises: fonte.totalAnalises,
+      verdadeiras: fonte.verdadeiras,
+      falsas: fonte.falsas,
+      mistas: fonte.mistas,
+      mediaScore: fonte.totalAnalises
+        ? Math.round(fonte.somaScore / fonte.totalAnalises)
+        : 0,
+      likes,
+      dislikes,
+      saldo: likes - dislikes,
+      fama: FAMA_FONTE.has(fonte.dominio) ? FAMA_FONTE.get(fonte.dominio) : 999,
+      denuncias: Number(denunciaMapa.get(fonte.dominio) || 0),
+      reacaoUsuario: reacoesUsuario.get(fonte.dominio) || "",
+    };
+  });
+
+  // Ranking por saldo de likes/dislikes; sem votos, ordena por fama/popularidade.
+  fontes.sort(
+    (a, b) =>
+      b.saldo - a.saldo ||
+      b.likes - a.likes ||
+      Number(b.analisada) - Number(a.analisada) ||
+      b.totalAnalises - a.totalAnalises ||
+      a.fama - b.fama ||
+      a.dominio.localeCompare(b.dominio),
+  );
+
+  res.json({
+    ok: true,
+    usuario: sessao ? { email: sessao.email, nome: sessao.nome } : null,
+    fontes,
+  });
+});
+
+// Resumo de UMA fonte (usado pelo selo da extensão ao visitar um site).
+app.get("/api/fontes/uma", (req, res) => {
+  const sessao = obterSessaoUsuario(req.query.authToken);
+  const dominio = normalizarDominioFonte(req.query.dominio);
+
+  if (!dominio || ehDominioNaoNoticia(dominio)) {
+    return res.json({ ok: true, noRanking: false, dominio: dominio || "" });
+  }
+
+  let totalAnalises = 0;
+  db.prepare("SELECT url FROM cache_analises")
+    .all()
+    .forEach((row) => {
+      if (dominioDaUrl(row.url) === dominio) totalAnalises += 1;
+    });
+
+  const resumo = obterResumoFonte(dominio);
+  const conhecida = FAMA_FONTE.has(dominio);
+  const noRanking =
+    conhecida ||
+    totalAnalises > 0 ||
+    resumo.likes > 0 ||
+    resumo.dislikes > 0 ||
+    resumo.denuncias > 0;
+
+  let reacaoUsuario = "";
+  if (sessao) {
+    const row = db
+      .prepare(
+        "SELECT reacao FROM fonte_feedback WHERE dominio = ? AND usuario_email = ?",
+      )
+      .get(dominio, sessao.email);
+    reacaoUsuario = row?.reacao || "";
+  }
+
+  res.json({
+    ok: true,
+    noRanking,
+    dominio,
+    analisada: totalAnalises > 0,
+    totalAnalises,
+    likes: resumo.likes,
+    dislikes: resumo.dislikes,
+    denuncias: resumo.denuncias,
+    reacaoUsuario,
+    logado: Boolean(sessao),
+  });
+});
+
+app.post("/api/fontes/voto", (req, res) => {
+  const sessao = obterSessaoUsuario(req.body?.authToken);
+  const dominio = normalizarDominioFonte(req.body?.dominio);
+  const reacao = normalizarReacaoFeedback(req.body?.reacao);
+
+  if (!sessao) {
+    return res.status(401).json({
+      ok: false,
+      erro: "Entre na extensão para avaliar uma fonte.",
+    });
+  }
+  if (!dominio) {
+    return res.status(400).json({ ok: false, erro: "Fonte inválida." });
+  }
+  if (!reacao) {
+    return res
+      .status(400)
+      .json({ ok: false, erro: "Escolha like ou dislike." });
+  }
+
+  try {
+    const existente = db
+      .prepare(
+        "SELECT reacao FROM fonte_feedback WHERE dominio = ? AND usuario_email = ?",
+      )
+      .get(dominio, sessao.email);
+
+    let reacaoUsuario = reacao;
+    if (existente && existente.reacao === reacao) {
+      // Clicar de novo na mesma reação remove o voto (toggle).
+      db.prepare(
+        "DELETE FROM fonte_feedback WHERE dominio = ? AND usuario_email = ?",
+      ).run(dominio, sessao.email);
+      reacaoUsuario = "";
+    } else {
+      db.prepare(
+        `INSERT INTO fonte_feedback (dominio, usuario_email, reacao)
+         VALUES (?, ?, ?)
+         ON CONFLICT(dominio, usuario_email) DO UPDATE SET
+           reacao = excluded.reacao,
+           atualizado_em = CURRENT_TIMESTAMP`,
+      ).run(dominio, sessao.email, reacao);
+    }
+
+    res.json({ ok: true, dominio, reacaoUsuario, ...obterResumoFonte(dominio) });
+  } catch (err) {
+    console.error("[/api/fontes/voto] erro:", err);
+    res
+      .status(500)
+      .json({ ok: false, erro: "Não foi possível salvar a avaliação." });
+  }
+});
+
+app.post("/api/fontes/denuncia", async (req, res) => {
+  const sessao = obterSessaoUsuario(req.body?.authToken);
+  const dominio = normalizarDominioFonte(req.body?.dominio);
+  const motivo = normalizarMotivoDenuncia(req.body?.motivo);
+  const comentario = normalizarComentarioFeedback(req.body?.comentario);
+
+  if (!sessao) {
+    return res.status(401).json({
+      ok: false,
+      erro: "Entre na extensão para denunciar uma fonte.",
+    });
+  }
+  if (!dominio) {
+    return res.status(400).json({ ok: false, erro: "Fonte inválida." });
+  }
+  if (!motivo) {
+    return res
+      .status(400)
+      .json({ ok: false, erro: "Selecione um motivo para a denúncia." });
+  }
+
+  try {
+    db.prepare(
+      `INSERT INTO fonte_denuncias (dominio, usuario_email, usuario_nome, motivo, comentario)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(dominio, usuario_email) DO UPDATE SET
+         usuario_nome = excluded.usuario_nome,
+         motivo = excluded.motivo,
+         comentario = excluded.comentario,
+         atualizado_em = CURRENT_TIMESTAMP`,
+    ).run(dominio, sessao.email, sessao.nome, motivo, comentario);
+
+    // Notifica a empresa por e-mail (best-effort, não bloqueia a denúncia).
+    const destino = emailEmpresaDestino();
+    if (destino && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      transporter
+        .sendMail({
+          from: `"VerusAI" <${process.env.EMAIL_USER}>`,
+          to: destino,
+          replyTo: sessao.email,
+          subject: `Denúncia de fonte - ${dominio}`,
+          text:
+            `Usuário: ${sessao.nome} <${sessao.email}>\n` +
+            `Fonte denunciada: ${dominio}\n` +
+            `Motivo: ${motivo}\n\n` +
+            `Comentário:\n${comentario || "(sem comentário)"}`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:680px;line-height:1.5">
+              <h2>Denúncia de fonte</h2>
+              <p><strong>Usuário:</strong> ${escapeHtmlEmail(sessao.nome)} &lt;${escapeHtmlEmail(sessao.email)}&gt;</p>
+              <p><strong>Fonte:</strong> ${escapeHtmlEmail(dominio)}</p>
+              <p><strong>Motivo:</strong> ${escapeHtmlEmail(motivo)}</p>
+              <hr/>
+              <p style="white-space:pre-wrap">${escapeHtmlEmail(comentario || "(sem comentário)")}</p>
+            </div>
+          `,
+        })
+        .catch((err) =>
+          console.warn("[/api/fontes/denuncia] e-mail ignorado:", err.message),
+        );
+    }
+
+    res.json({
+      ok: true,
+      dominio,
+      jaDenunciou: true,
+      mensagem: "Denúncia registrada. Obrigado por ajudar.",
+      ...obterResumoFonte(dominio),
+    });
+  } catch (err) {
+    console.error("[/api/fontes/denuncia] erro:", err);
+    res
+      .status(500)
+      .json({ ok: false, erro: "Não foi possível registrar a denúncia." });
   }
 });
 

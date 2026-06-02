@@ -2,6 +2,10 @@
 .env
 
 # Banco de dados
+verusai.db
+verusai.db-wal
+verusai.db-shm
+# nome antigo (mantido para ignorar resíduos)
 usuarios.db
 
 # Dependências

@@ -686,16 +686,19 @@ function collectAlertas(
 
 function buildAuditMap(claimAudit = {}) {
   const map = new Map();
-  safeArray(claimAudit.audits || claimAudit.resultados || claimAudit.claims).forEach(
-    (audit) => {
-      const id = String(firstValue(audit.claim_id, audit.claimId, audit.claimid));
-      if (id) map.set(id, audit);
-    },
-  );
+  safeArray(
+    claimAudit.audits || claimAudit.resultados || claimAudit.claims,
+  ).forEach((audit) => {
+    const id = String(firstValue(audit.claim_id, audit.claimId, audit.claimid));
+    if (id) map.set(id, audit);
+  });
   return map;
 }
 
-function mergeSimpleCheckWithClaimAudit(simpleCheckClaims = {}, claimAudit = {}) {
+function mergeSimpleCheckWithClaimAudit(
+  simpleCheckClaims = {},
+  claimAudit = {},
+) {
   const auditMap = buildAuditMap(claimAudit);
   const resultados = safeArray(
     simpleCheckClaims.resultados || simpleCheckClaims.claims,
@@ -717,12 +720,18 @@ function mergeSimpleCheckWithClaimAudit(simpleCheckClaims = {}, claimAudit = {})
       ok: claimAudit?.ok ?? null,
       etapa: claimAudit?.etapa || "claimAudit",
       resumo: claimAudit?.resumo || {},
-      audits: safeArray(claimAudit.audits || claimAudit.resultados || claimAudit.claims),
+      audits: safeArray(
+        claimAudit.audits || claimAudit.resultados || claimAudit.claims,
+      ),
     },
   };
 }
 
-function buildObservacoes(resultadoPipeline, dadosAtualizados, claimAudit = {}) {
+function buildObservacoes(
+  resultadoPipeline,
+  dadosAtualizados,
+  claimAudit = {},
+) {
   return {
     pipeline: {
       status: resultadoPipeline?.status || "",
@@ -733,7 +742,9 @@ function buildObservacoes(resultadoPipeline, dadosAtualizados, claimAudit = {}) 
     claimAudit: {
       ok: claimAudit?.ok ?? null,
       resumo: claimAudit?.resumo || {},
-      audits: safeArray(claimAudit.audits || claimAudit.resultados || claimAudit.claims),
+      audits: safeArray(
+        claimAudit.audits || claimAudit.resultados || claimAudit.claims,
+      ),
     },
     debugValidacao: resultadoPipeline?.debugValidacao || {},
   };
@@ -888,7 +899,9 @@ function normalizeBuildFinalResponse(resultado = {}, input) {
     ...clean,
     ok: clean?.ok !== false,
     etapa: "buildFinal",
-    urlOriginal: normalizeUrl(firstValue(clean.urlOriginal, fallback.urlOriginal)),
+    urlOriginal: normalizeUrl(
+      firstValue(clean.urlOriginal, fallback.urlOriginal),
+    ),
     veiculo: normalizePlainText(firstValue(clean.veiculo, fallback.veiculo)),
     dataPublicacao: normalizePlainText(
       firstValue(clean.dataPublicacao, fallback.dataPublicacao),
@@ -916,7 +929,11 @@ function normalizeBuildFinalResponse(resultado = {}, input) {
       ),
     ),
     textoFinalSemHtml: normalizePlainText(
-      firstValue(clean.textoFinalSemHtml, htmlFinalText, fallback.textoFinalSemHtml),
+      firstValue(
+        clean.textoFinalSemHtml,
+        htmlFinalText,
+        fallback.textoFinalSemHtml,
+      ),
     ),
     htmlFinal: "",
     baseDoVeredito: normalizePublicTextDeep(
@@ -981,7 +998,7 @@ async function buildFinal(resultadoPipeline, extras = {}) {
       body: JSON.stringify({
         prompt: {
           id: promptId,
-          version: process.env.OPENAI_BUILD_FINAL_PROMPT_VERSION || "8",
+          version: "9",
           variables,
         },
       }),

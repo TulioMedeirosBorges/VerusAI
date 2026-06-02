@@ -23,7 +23,12 @@ _buttonStyle.textContent =
   ".vp-title { display:flex; flex-direction:column; gap:3px; min-width:0; }" +
   ".vp-eyebrow { font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; opacity:0.7; }" +
   ".vp-title strong { font-size:13px; line-height:1.2; letter-spacing:0.02em; }" +
-  ".vp-percent { flex:0 0 auto; min-width:48px; text-align:right; font-size:18px; line-height:1; font-weight:800; color:var(--verus-cream); }" +
+  ".vp-head-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex:0 0 auto; }" +
+  ".vp-percent { min-width:48px; text-align:right; font-size:18px; line-height:1; font-weight:800; color:var(--verus-cream); }" +
+  ".vp-timer { display:inline-flex; align-items:center; gap:5px; font-family:'Courier New',monospace; font-size:13px; font-weight:700; letter-spacing:0.06em; color:var(--verus-cream); opacity:0.92; }" +
+  ".vp-timer::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--verus-red); animation:verusProgressPulse 1.2s ease-in-out infinite; }" +
+  ".verus-progress-popup.is-finished .vp-timer::before { background:#1a7a3c; animation:none; }" +
+  ".verus-progress-popup.is-error .vp-timer::before { background:var(--verus-red); animation:none; }" +
   ".vp-body { padding:12px 13px 13px; display:flex; flex-direction:column; gap:10px; }" +
   ".vp-stage-row { display:grid; grid-template-columns:28px 1fr; gap:9px; align-items:center; }" +
   ".vp-orbit { width:28px; height:28px; border:2px solid rgba(23,23,21,0.18); border-top-color:var(--verus-red); border-radius:50%; position:relative; animation:verusProgressSpin 1.3s linear infinite; }" +
@@ -128,7 +133,10 @@ function _criarPopupProgresso() {
     '<span class="vp-eyebrow">VerusIA</span>' +
     "<strong>Analisando notícia</strong>" +
     "</div>" +
+    '<div class="vp-head-right">' +
     '<div class="vp-percent">0%</div>' +
+    '<div class="vp-timer" title="Tempo decorrido">00:00</div>' +
+    "</div>" +
     "</div>" +
     '<div class="vp-body">' +
     '<div class="vp-stage-row">' +
@@ -151,6 +159,7 @@ function _criarPopupProgresso() {
   var label = popup.querySelector(".vp-label");
   var detail = popup.querySelector(".vp-detail");
   var clock = popup.querySelector(".vp-clock");
+  var timerEl = popup.querySelector(".vp-timer");
   var segments = popup.querySelector(".vp-segments");
   var segmentEls = [];
   var etapaAtual = 0;
@@ -159,6 +168,17 @@ function _criarPopupProgresso() {
   var falhou = false;
   var erroMensagem = "";
   var progressoServidor = null;
+  var inicioMs = Date.now();
+  var fimMs = null;
+
+  function formatarTempo(ms) {
+    var totalSeg = Math.max(0, Math.floor(ms / 1000));
+    var min = Math.floor(totalSeg / 60);
+    var seg = totalSeg % 60;
+    return (
+      (min < 10 ? "0" : "") + min + ":" + (seg < 10 ? "0" : "") + seg
+    );
+  }
 
   _ETAPAS.forEach(function () {
     var seg = document.createElement("span");
@@ -205,6 +225,10 @@ function _criarPopupProgresso() {
         ? "interrompido"
         : "aguardando etapa real";
 
+    if (timerEl) {
+      timerEl.textContent = formatarTempo((fimMs || Date.now()) - inicioMs);
+    }
+
     segmentEls.forEach(function (seg, index) {
       seg.classList.toggle("done", index < etapaAtual || concluido);
       seg.classList.toggle("active", index === etapaAtual && !concluido);
@@ -233,12 +257,14 @@ function _criarPopupProgresso() {
     },
     finish: function () {
       concluido = true;
+      fimMs = Date.now();
       etapaAtual = _ETAPAS.length - 1;
       popup.classList.add("is-finished");
       renderizar();
     },
     fail: function (mensagem) {
       falhou = true;
+      fimMs = Date.now();
       erroMensagem = mensagem || "O servidor retornou um erro.";
       popup.classList.add("is-error");
       renderizar();

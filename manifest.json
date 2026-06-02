@@ -46,6 +46,7 @@
         "src/content/chat/chat.js",
         "src/content/ui/sidebar.js",
         "src/content/ui/button.js",
+        "src/content/ui/selo-fonte.js",
         "src/content/content.js"
       ],
       "run_at": "document_idle"
