@@ -4,6 +4,10 @@ function criarPopupLoginInterno(shadow, onLoginSuccess) {
 
   var _logo = chrome.runtime.getURL("/assets/images/VerusIAAtivo 1.svg");
   var _iconGoogle = chrome.runtime.getURL("assets/icons/google.svg");
+  var _siteUrl =
+    typeof VERUS_SITE_URL !== "undefined"
+      ? VERUS_SITE_URL
+      : "http://localhost:3000/site";
   var aside = shadow.querySelector("aside");
 
   var mask = document.createElement("div");
@@ -24,6 +28,7 @@ function criarPopupLoginInterno(shadow, onLoginSuccess) {
         '<button class="login_popup_btn_google" id="popup_google_login"><img src="' + _iconGoogle + '" class="icon_googlelo_login"/> Continue with Google</button>' +
         '<p class="login_popup_cadastro">Don\'t have an account? <a id="popup_cadastro_login">Log up</a></p>' +
       '</div>' +
+      '<p class="login_popup_site"><a href="' + _siteUrl + '" target="_blank" rel="noopener noreferrer">Visite o site do VerusIA</a></p>' +
     '</div>' +
     // TELA 2: SOLICITAR RECUPERAÇÃO
     '<div class="login_popup_tela" id="tela_solicitar">' +

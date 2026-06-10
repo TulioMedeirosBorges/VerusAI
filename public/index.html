@@ -12,7 +12,12 @@
     <!-- ═══════════════════════════════════════════════════════════
          Loading Screen (removida pelo JS após animação)
          ═══════════════════════════════════════════════════════════ -->
-    <div id="ls" role="status" aria-live="polite" aria-label="Carregando analises">
+    <div
+      id="ls"
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando analises"
+    >
       <!-- Decorative corners -->
       <div class="ls-corner ls-corner--tl"></div>
       <div class="ls-corner ls-corner--tr"></div>
@@ -156,38 +161,114 @@
             Sobre
           </button>
         </div>
-        <p class="header-sub">Banco público de notícias verificadas</p>
+        <div class="header-right">
+          <p class="header-sub">Banco comunitário de notícias verificadas</p>
+          <button
+            class="header-user"
+            id="userBtn"
+            type="button"
+            aria-label="Minha atividade"
+            title="Minha atividade"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
 
     <main class="main">
       <nav class="tabs" id="tabs" aria-label="Seções">
-        <button class="tab-btn ativo" data-view="analises" type="button">
-          <img class="tab-icon" src="/assets/icons/IconVerusAi.png" alt="" /> Análises
-        </button>
+        <div class="tab-dropdown" id="analisesDropdown">
+          <button
+            class="tab-btn ativo"
+            data-view="analises"
+            id="analisesTab"
+            type="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            <img class="tab-icon" src="/assets/icons/IconVerusAi.png" alt="" />
+            Análises
+            <span class="tab-caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="tab-menu" id="analisesMenu" role="menu">
+            <button
+              class="tab-menu-item ativo"
+              data-sub="lista"
+              role="menuitem"
+              type="button"
+            >
+              Análises
+            </button>
+            <button
+              class="tab-menu-item"
+              data-sub="checadas"
+              role="menuitem"
+              type="button"
+            >
+              Mais checadas
+            </button>
+            <button
+              class="tab-menu-item"
+              data-sub="numeros"
+              role="menuitem"
+              type="button"
+            >
+              Dashboard
+            </button>
+          </div>
+        </div>
         <button class="tab-btn" data-view="aovivo" type="button">
           <span class="tab-dot" aria-hidden="true"></span> Ao Vivo
         </button>
         <button class="tab-btn" data-view="fontes" type="button">
           <span class="tab-rank" aria-hidden="true">★</span> Ranking de Fontes
         </button>
+        <button class="tab-btn" data-view="analisar" type="button">
+          <span class="tab-plus" aria-hidden="true">+</span> Analisar Link
+        </button>
+        <button class="tab-btn" data-view="transparencia" type="button">
+          <span class="tab-gov" aria-hidden="true">⚖</span> Transparência
+        </button>
+        <button class="tab-btn" data-view="aprender" type="button">
+          <span class="tab-learn" aria-hidden="true">🎓</span> Aprender
+        </button>
+        <button class="tab-btn" data-view="comunidade" type="button">
+          <span class="tab-com" aria-hidden="true">👥</span> Comunidade
+        </button>
+        <button class="tab-btn" data-view="parceiros" type="button">
+          <span class="tab-parc" aria-hidden="true">🤝</span> Parceiros
+        </button>
       </nav>
 
       <section class="hero">
         <div class="hero-left">
           <div class="hero-strip">Revista de Fact-checking</div>
-          <h1>Descubra a verdade por trás de cada notícia</h1>
+          <h1>Entenda o contexto por trás de cada notícia</h1>
           <p>
-            Uma curadoria editorial de análises verificadas com estilo de
-            recortes e camadas visuais.
+            Notícias verificadas e debatidas pela comunidade — cada análise traz
+            o veredito, as fontes e o contexto da checagem.
           </p>
         </div>
         <div class="hero-right">
           <div class="hero-card">
-            <span class="hero-tag">Destaque</span>
+            <span class="hero-tag">Comunidade</span>
             <p>
-              Mais de 1.000 análises classificadas por veracidade, fontes e
-              contexto.
+              <strong class="hero-num" id="heroComunidadeNum">—</strong>
+              pessoas já fazem parte da comunidade verificando notícias.
             </p>
           </div>
         </div>
@@ -196,7 +277,18 @@
       <!-- ticker injetado pelo JS aqui -->
 
       <!-- Destaque: notícia com mais likes -->
-      <section class="destaque-likes reveal-section" id="destaqueLikes" hidden></section>
+      <section
+        class="destaque-likes reveal-section"
+        id="destaqueLikes"
+        hidden
+      ></section>
+
+      <!-- Mais checadas da semana (checagens em destaque no período) -->
+      <section
+        class="mais-checadas reveal-section"
+        id="maisChecadas"
+        hidden
+      ></section>
 
       <section class="filtros">
         <input
@@ -243,6 +335,8 @@
 
       <section class="stats" id="stats"></section>
 
+      <section class="dashboard" id="dashboard"></section>
+
       <section class="grid" id="grid">
         <div class="loading">Carregando análises…</div>
       </section>
@@ -267,14 +361,30 @@
         </div>
 
         <div class="ao-vivo-topicos" id="aoVivoTopicos">
-          <button class="ao-vivo-chip ativo" data-topico="geral" type="button">Geral</button>
-          <button class="ao-vivo-chip" data-topico="brasil" type="button">Brasil</button>
-          <button class="ao-vivo-chip" data-topico="mundo" type="button">Mundo</button>
-          <button class="ao-vivo-chip" data-topico="economia" type="button">Economia</button>
-          <button class="ao-vivo-chip" data-topico="tecnologia" type="button">Tecnologia</button>
-          <button class="ao-vivo-chip" data-topico="ciencia" type="button">Ciência</button>
-          <button class="ao-vivo-chip" data-topico="saude" type="button">Saúde</button>
-          <button class="ao-vivo-chip" data-topico="esportes" type="button">Esportes</button>
+          <button class="ao-vivo-chip ativo" data-topico="geral" type="button">
+            Geral
+          </button>
+          <button class="ao-vivo-chip" data-topico="brasil" type="button">
+            Brasil
+          </button>
+          <button class="ao-vivo-chip" data-topico="mundo" type="button">
+            Mundo
+          </button>
+          <button class="ao-vivo-chip" data-topico="economia" type="button">
+            Economia
+          </button>
+          <button class="ao-vivo-chip" data-topico="tecnologia" type="button">
+            Tecnologia
+          </button>
+          <button class="ao-vivo-chip" data-topico="ciencia" type="button">
+            Ciência
+          </button>
+          <button class="ao-vivo-chip" data-topico="saude" type="button">
+            Saúde
+          </button>
+          <button class="ao-vivo-chip" data-topico="esportes" type="button">
+            Esportes
+          </button>
         </div>
 
         <div class="ao-vivo-grid" id="aoVivoGrid">
@@ -302,8 +412,8 @@
         <p class="fontes-intro">
           Todas as fontes (veículos) já analisadas no VerusAI. Vote com
           <strong>like</strong> ou <strong>dislike</strong> nas que você
-          considera confiáveis e denuncie as problemáticas. O ranking é
-          ordenado pela avaliação da comunidade.
+          considera confiáveis e denuncie as problemáticas. O ranking é ordenado
+          pela avaliação da comunidade.
         </p>
 
         <div class="fontes-stats" id="fontesStats"></div>
@@ -319,10 +429,33 @@
           />
         </div>
 
-        <div class="fontes-filtros" id="fontesFiltros" role="group" aria-label="Filtrar fontes">
-          <button class="fontes-chip ativo" data-fonte-filtro="todas" type="button">Todas</button>
-          <button class="fontes-chip" data-fonte-filtro="analisadas" type="button">Analisadas</button>
-          <button class="fontes-chip" data-fonte-filtro="nao_analisadas" type="button">Não analisadas</button>
+        <div
+          class="fontes-filtros"
+          id="fontesFiltros"
+          role="group"
+          aria-label="Filtrar fontes"
+        >
+          <button
+            class="fontes-chip ativo"
+            data-fonte-filtro="todas"
+            type="button"
+          >
+            Todas
+          </button>
+          <button
+            class="fontes-chip"
+            data-fonte-filtro="analisadas"
+            type="button"
+          >
+            Analisadas
+          </button>
+          <button
+            class="fontes-chip"
+            data-fonte-filtro="nao_analisadas"
+            type="button"
+          >
+            Não analisadas
+          </button>
         </div>
 
         <div class="fontes-lista" id="fontesLista">
@@ -331,7 +464,425 @@
 
         <div class="paginacao fontes-paginacao" id="fontesPaginacao"></div>
       </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           Analisar Link — visível apenas na aba "Analisar Link"
+           ═══════════════════════════════════════════════════════════ -->
+      <section class="analisar-view" id="analisarView" hidden>
+        <div class="analisar-head">
+          <div class="analisar-titulo">
+            <span class="analisar-plus" aria-hidden="true">+</span>
+            <h2>Analisar uma notícia por link</h2>
+          </div>
+          <p class="analisar-intro">
+            Cole o link de uma notícia ou artigo. O VerusAI extrai o conteúdo e
+            roda a verificação completa de veracidade. Funciona melhor com
+            portais de notícia (conteúdo em texto).
+          </p>
+        </div>
+
+        <form class="analisar-form" id="analisarForm" autocomplete="off">
+          <input
+            type="url"
+            id="analisarUrl"
+            class="analisar-input"
+            placeholder="https://exemplo.com/noticia…"
+            aria-label="Link da notícia para analisar"
+            required
+          />
+          <button type="submit" class="analisar-btn" id="analisarBtn">
+            Analisar
+          </button>
+        </form>
+
+        <p class="analisar-status" id="analisarStatus" aria-live="polite"></p>
+
+        <!-- Barra de progresso (igual à do sidebar da extensão) -->
+        <div class="analisar-prog" id="analisarProg" hidden>
+          <div class="ap-head">
+            <div class="ap-title">
+              <span class="ap-eyebrow">VerusIA</span>
+              <strong>Analisando notícia</strong>
+            </div>
+            <div class="ap-head-right">
+              <div class="ap-percent" id="analisarProgPercent">0%</div>
+              <div
+                class="ap-timer"
+                id="analisarProgTimer"
+                title="Tempo decorrido"
+              >
+                00:00
+              </div>
+            </div>
+          </div>
+          <div class="ap-body">
+            <div class="ap-stage-row">
+              <div class="ap-orbit" aria-hidden="true"></div>
+              <div class="ap-stage-copy">
+                <span class="ap-step" id="analisarProgStage"
+                  >Etapa 1 de 12</span
+                >
+                <span class="ap-label" id="analisarProgLabel">Iniciando…</span>
+                <span class="ap-detail" id="analisarProgDetail"></span>
+              </div>
+            </div>
+            <div class="ap-bar">
+              <div class="ap-fill" id="analisarProgFill"></div>
+            </div>
+            <div class="ap-segments" id="analisarProgSegments"></div>
+            <div class="ap-footer">
+              <span>Pipeline em andamento</span>
+              <span class="ap-clock" id="analisarProgClock">estimando</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resultado da análise -->
+        <div class="analisar-resultado" id="analisarResultado"></div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           Transparência — gastos de deputados, senadores e prefeito
+           ═══════════════════════════════════════════════════════════ -->
+      <section class="transp-view" id="transpView" hidden>
+        <div class="transp-head">
+          <div class="transp-titulo">
+            <span class="transp-icon" aria-hidden="true">⚖</span>
+            <h2>Transparência — gastos públicos</h2>
+          </div>
+          <p class="transp-intro">
+            Gastos de parlamentares e da Prefeitura de Franca-SP a partir de
+            <strong>dados oficiais abertos</strong> (Câmara dos Deputados,
+            Senado Federal e SICONFI/Tesouro Nacional). Cada valor traz a fonte
+            e o período. Nenhum número é estimado pelo VerusAI.
+          </p>
+        </div>
+
+        <div
+          class="transp-subtabs"
+          id="transpSubtabs"
+          role="group"
+          aria-label="Tipo de cargo"
+        >
+          <button
+            class="transp-chip ativo"
+            data-transp="deputados"
+            type="button"
+          >
+            Deputados federais
+          </button>
+          <button class="transp-chip" data-transp="senadores" type="button">
+            Senadores
+          </button>
+          <button class="transp-chip" data-transp="presidentes" type="button">
+            Presidentes
+          </button>
+          <button class="transp-chip" data-transp="franca" type="button">
+            Prefeitura de Franca-SP
+          </button>
+        </div>
+
+        <div class="transp-filtros" id="transpFiltros">
+          <input
+            type="text"
+            id="transpBusca"
+            class="transp-busca"
+            placeholder="Buscar por nome…"
+            autocomplete="off"
+            aria-label="Buscar parlamentar"
+          />
+          <select
+            id="transpUf"
+            class="transp-uf"
+            aria-label="Filtrar por estado"
+          >
+            <option value="">Todos os estados</option>
+          </select>
+          <select
+            id="transpPartido"
+            class="transp-uf"
+            aria-label="Filtrar por partido"
+          >
+            <option value="">Todos os partidos</option>
+          </select>
+          <select
+            id="transpAno"
+            class="transp-ano"
+            aria-label="Ano dos gastos"
+          ></select>
+        </div>
+
+        <div class="transp-favoritos" id="transpFavoritos" hidden></div>
+
+        <p class="transp-status" id="transpStatus" aria-live="polite"></p>
+
+        <div class="transp-lista" id="transpLista">
+          <div class="loading">Carregando…</div>
+        </div>
+
+        <div class="paginacao transp-paginacao" id="transpPaginacao"></div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           Minha atividade (perfil do usuário) — visível só nessa aba
+           ═══════════════════════════════════════════════════════════ -->
+      <section class="atividade-view" id="atividadeView" hidden></section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           Aprender — aula "Como analisar uma notícia" + quiz
+           ═══════════════════════════════════════════════════════════ -->
+      <section class="aprender-view" id="aprenderView" hidden></section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           Comunidade (ranking, selos e atividade) — injetada pelo JS
+           ═══════════════════════════════════════════════════════════ -->
+      <section class="comunidade-view" id="comunidadeView" hidden></section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           Parceiros e Apoiadores (conteúdo institucional estático)
+           Para trocar o e-mail de contato dos botões, procure por
+           "contato@verusai.app" abaixo.
+           ═══════════════════════════════════════════════════════════ -->
+      <section class="parceiros-view" id="parceirosView" hidden>
+        <header class="parc-hero">
+          <span class="parc-eyebrow">Parceiros e Apoiadores</span>
+          <h2 class="parc-hero-titulo">Quem caminha ao nosso lado</h2>
+          <p class="parc-hero-sub">
+            A VerusAI é mantida por uma rede de instituições, empresas e pessoas
+            que acreditam no direito à informação verificada. Cada parceria e
+            cada apoio nos mantêm <strong>independentes, gratuitos e abertos a
+            toda a sociedade</strong>.
+          </p>
+        </header>
+
+        <!-- ── Nosso objetivo (manifesto) ── -->
+        <section class="parc-objetivo">
+          <span class="parc-objetivo-eyebrow">Por que existimos</span>
+          <h3 class="parc-objetivo-titulo">Nosso objetivo</h3>
+          <div class="parc-objetivo-corpo">
+            <p>
+              Vivemos um tempo em que o boato viaja mais rápido que o fato. A
+              VerusAI nasceu para mudar isso: unir inteligência artificial e a
+              força de uma comunidade para checar notícias, revelar fontes e
+              devolver o contexto que a pressa costuma apagar.
+            </p>
+            <p>
+              Acreditamos que combater a desinformação é, antes de tudo, um ato
+              de educação. Por isso cada análise é transparente — mostramos o
+              veredito, as evidências e o caminho até a conclusão, para que
+              qualquer pessoa aprenda a avaliar o que lê e compartilha.
+            </p>
+            <p>
+              Nosso compromisso é com a verdade baseada em evidências, com a
+              transparência em cada verificação e com a construção de um ambiente
+              colaborativo, em que checar a informação é tarefa de todos. Esse é
+              o objetivo que nos move — e que o seu apoio torna possível.
+            </p>
+          </div>
+          <blockquote class="parc-quote">
+            “Informação verificada não é privilégio: é direito de toda a
+            sociedade.”
+          </blockquote>
+        </section>
+
+        <!-- ── Empresas parceiras ── -->
+        <section class="parc-sec">
+          <h3 class="parc-sec-titulo">Empresas e instituições parceiras</h3>
+          <p class="parc-sec-intro">
+            Organizações que sustentam o projeto com recursos, infraestrutura,
+            serviços ou colaboração estratégica. É graças a elas que mantemos a
+            plataforma no ar, segura e acessível a todos. Estes espaços estão
+            <strong>abertos a quem quiser construir essa rede conosco</strong>.
+          </p>
+          <div class="parc-grid">
+            <!-- TEMPLATE de parceiro real: troque o ícone por um <img> do logo
+                 e ajuste nome/descrição.
+            <article class="parc-card">
+              <div class="parc-logo"><img src="/assets/parceiros/exemplo.png" alt="" /></div>
+              <h4 class="parc-card-nome">Nome da Organização</h4>
+              <p class="parc-card-tipo">Tipo de apoio</p>
+            </article>
+            -->
+            <article class="parc-card parc-card-aberto">
+              <div class="parc-logo" aria-hidden="true">🖥️</div>
+              <h4 class="parc-card-nome">Infraestrutura &amp; Hospedagem</h4>
+              <p class="parc-card-tipo">Servidores, nuvem e disponibilidade</p>
+              <span class="parc-card-tag">Espaço aberto</span>
+            </article>
+            <article class="parc-card parc-card-aberto">
+              <div class="parc-logo" aria-hidden="true">⚙️</div>
+              <h4 class="parc-card-nome">Tecnologia &amp; Serviços</h4>
+              <p class="parc-card-tipo">Ferramentas, APIs e suporte técnico</p>
+              <span class="parc-card-tag">Espaço aberto</span>
+            </article>
+            <article class="parc-card parc-card-aberto">
+              <div class="parc-logo" aria-hidden="true">🎓</div>
+              <h4 class="parc-card-nome">Educação &amp; Pesquisa</h4>
+              <p class="parc-card-tipo">Universidades e grupos de estudo</p>
+              <span class="parc-card-tag">Espaço aberto</span>
+            </article>
+            <article class="parc-card parc-card-aberto">
+              <div class="parc-logo" aria-hidden="true">📰</div>
+              <h4 class="parc-card-nome">Mídia &amp; Checagem</h4>
+              <p class="parc-card-tipo">Veículos e agências de fact-checking</p>
+              <span class="parc-card-tag">Espaço aberto</span>
+            </article>
+            <article class="parc-card parc-card-cta">
+              <div class="parc-logo" aria-hidden="true">🤝</div>
+              <h4 class="parc-card-nome">Sua organização aqui</h4>
+              <p class="parc-card-tipo">
+                Vamos construir uma informação mais confiável juntos.
+              </p>
+              <a class="parc-btn parc-btn-sm"
+                href="mailto:contato@verusai.app?subject=Proposta%20de%20parceria%20institucional">
+                Quero ser parceiro
+              </a>
+            </article>
+          </div>
+        </section>
+
+        <!-- ── Apoiadores da comunidade ── -->
+        <section class="parc-sec">
+          <h3 class="parc-sec-titulo">Apoiadores da comunidade</h3>
+          <p class="parc-sec-intro">
+            Pessoas que escolheram contribuir financeiramente para manter a
+            VerusAI independente e gratuita. A cada nome neste mural, o nosso
+            mais sincero obrigado.
+          </p>
+          <!-- TEMPLATE de apoiador: <span class="parc-apoiador">Nome</span> -->
+          <div class="parc-apoiadores" hidden>
+            <!-- Adicione os nomes aqui e remova o atributo "hidden" acima. -->
+          </div>
+          <div class="parc-apoiadores-vazio">
+            <p>
+              <strong>Este mural está começando agora.</strong> Seja uma das
+              primeiras pessoas a sustentar a checagem independente — seu nome
+              aparece aqui, em reconhecimento ao seu apoio.
+            </p>
+            <a class="parc-btn"
+              href="mailto:contato@verusai.app?subject=Quero%20apoiar%20a%20VerusAI">
+              Apoiar o projeto
+            </a>
+          </div>
+        </section>
+
+        <!-- ── Como ajudar ── -->
+        <section class="parc-sec">
+          <h3 class="parc-sec-titulo">Como ajudar</h3>
+          <p class="parc-sec-intro">
+            Apoiar a VerusAI vai muito além de doar. Existem várias formas de
+            fortalecer a checagem independente — escolha a sua:
+          </p>
+          <div class="parc-ajuda-grid">
+            <article class="parc-ajuda">
+              <span class="parc-ajuda-icone" aria-hidden="true">💛</span>
+              <h4 class="parc-ajuda-titulo">Contribua financeiramente</h4>
+              <p class="parc-ajuda-desc">
+                Doações custeiam servidores, ferramentas e a manutenção da
+                plataforma. Qualquer valor, recorrente ou único, faz diferença.
+              </p>
+              <a class="parc-link"
+                href="mailto:contato@verusai.app?subject=Quero%20apoiar%20a%20VerusAI">
+                Apoiar agora →
+              </a>
+            </article>
+            <article class="parc-ajuda">
+              <span class="parc-ajuda-icone" aria-hidden="true">📣</span>
+              <h4 class="parc-ajuda-titulo">Divulgue o projeto</h4>
+              <p class="parc-ajuda-desc">
+                Compartilhe as análises e convide outras pessoas. Quanto mais
+                gente checando, menos espaço o boato encontra para circular.
+              </p>
+            </article>
+            <article class="parc-ajuda">
+              <span class="parc-ajuda-icone" aria-hidden="true">🤝</span>
+              <h4 class="parc-ajuda-titulo">Participe da comunidade</h4>
+              <p class="parc-ajuda-desc">
+                Comente, avalie fontes e debata as análises. Sua participação
+                eleva a qualidade da checagem coletiva.
+              </p>
+              <button class="parc-link" type="button" data-ir-view="comunidade">
+                Ir para a Comunidade →
+              </button>
+            </article>
+            <article class="parc-ajuda">
+              <span class="parc-ajuda-icone" aria-hidden="true">💡</span>
+              <h4 class="parc-ajuda-titulo">Envie sugestões</h4>
+              <p class="parc-ajuda-desc">
+                Tem uma ideia para melhorar a plataforma? Queremos ouvir. As
+                melhores funcionalidades nascem de quem usa.
+              </p>
+              <a class="parc-link"
+                href="mailto:contato@verusai.app?subject=Sugest%C3%A3o%20para%20a%20VerusAI">
+                Enviar sugestão →
+              </a>
+            </article>
+            <article class="parc-ajuda">
+              <span class="parc-ajuda-icone" aria-hidden="true">🔎</span>
+              <h4 class="parc-ajuda-titulo">Aponte notícias para verificar</h4>
+              <p class="parc-ajuda-desc">
+                Viu algo suspeito? Envie o link e ajude a comunidade a checar o
+                que está circulando por aí.
+              </p>
+              <button class="parc-link" type="button" data-ir-view="analisar">
+                Analisar um link →
+              </button>
+            </article>
+            <article class="parc-ajuda">
+              <span class="parc-ajuda-icone" aria-hidden="true">🏛️</span>
+              <h4 class="parc-ajuda-titulo">Parcerias institucionais</h4>
+              <p class="parc-ajuda-desc">
+                Sua organização quer apoiar a informação de qualidade? Vamos
+                conversar sobre recursos, infraestrutura ou colaboração.
+              </p>
+              <a class="parc-link"
+                href="mailto:contato@verusai.app?subject=Parceria%20institucional">
+                Falar com a gente →
+              </a>
+            </article>
+          </div>
+        </section>
+
+        <!-- ── Chamada final ── -->
+        <section class="parc-cta">
+          <h3 class="parc-cta-titulo">Cada apoio nos mantém de pé</h3>
+          <p class="parc-cta-texto">
+            Independentes, acessíveis e focados em entregar informação verificada
+            e de qualidade para toda a sociedade. Obrigado por fazer parte desta
+            comunidade que acredita na verdade baseada em evidências.
+          </p>
+          <div class="parc-cta-acoes">
+            <a class="parc-btn parc-btn-claro"
+              href="mailto:contato@verusai.app?subject=Quero%20apoiar%20a%20VerusAI">
+              Apoiar o projeto
+            </a>
+            <a class="parc-btn parc-btn-ghost"
+              href="mailto:contato@verusai.app?subject=Proposta%20de%20parceria%20institucional">
+              Seja um parceiro
+            </a>
+          </div>
+        </section>
+      </section>
     </main>
+
+    <!-- Modal de detalhe de gastos (transparência) -->
+    <div class="transp-modal-overlay" id="transpModalOverlay">
+      <div
+        class="transp-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transpModalTitulo"
+      >
+        <button
+          class="transp-modal-fechar"
+          id="transpModalFechar"
+          aria-label="Fechar"
+        >
+          ✕
+        </button>
+        <div id="transpModalConteudo"></div>
+      </div>
+    </div>
 
     <!-- Modal de detalhe -->
     <div class="modal-overlay" id="modalOverlay">
@@ -345,32 +896,125 @@
 
     <!-- Modal de denúncia de fonte -->
     <div class="fd-overlay" id="fonteDenunciaOverlay">
-      <div class="fd-modal" role="dialog" aria-modal="true" aria-labelledby="fdTitulo">
-        <button class="fd-fechar" id="fonteDenunciaFechar" aria-label="Fechar">✕</button>
+      <div
+        class="fd-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fdTitulo"
+      >
+        <button class="fd-fechar" id="fonteDenunciaFechar" aria-label="Fechar">
+          ✕
+        </button>
         <h3 id="fdTitulo">Denunciar fonte</h3>
         <p class="fd-dominio" id="fdDominio"></p>
         <label class="fd-campo">
           <span>Motivo da denúncia</span>
           <select id="fdMotivo">
             <option value="">Selecione um motivo…</option>
-            <option value="desinformacao">Publica desinformação / fake news</option>
-            <option value="sensacionalismo">Sensacionalismo / título enganoso</option>
+            <option value="desinformacao">
+              Publica desinformação / fake news
+            </option>
+            <option value="sensacionalismo">
+              Sensacionalismo / título enganoso
+            </option>
             <option value="sem_fontes">Não cita fontes confiáveis</option>
-            <option value="conteudo_ofensivo">Conteúdo ofensivo ou de ódio</option>
+            <option value="conteudo_ofensivo">
+              Conteúdo ofensivo ou de ódio
+            </option>
             <option value="spam">Spam ou propaganda enganosa</option>
             <option value="outro">Outro</option>
           </select>
         </label>
         <label class="fd-campo">
           <span>Comentário (opcional)</span>
-          <textarea id="fdComentario" maxlength="1000" rows="4"
-            placeholder="Conte mais sobre o problema desta fonte…"></textarea>
+          <textarea
+            id="fdComentario"
+            maxlength="1000"
+            rows="4"
+            placeholder="Conte mais sobre o problema desta fonte…"
+          ></textarea>
         </label>
         <p class="fd-status" id="fdStatus" aria-live="polite"></p>
         <div class="fd-acoes">
-          <button class="fd-cancelar" id="fonteDenunciaCancelar" type="button">Cancelar</button>
-          <button class="fd-enviar" id="fonteDenunciaEnviar" type="button">Enviar denúncia</button>
+          <button class="fd-cancelar" id="fonteDenunciaCancelar" type="button">
+            Cancelar
+          </button>
+          <button class="fd-enviar" id="fonteDenunciaEnviar" type="button">
+            Enviar denúncia
+          </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Modal de denúncia de usuário -->
+    <div class="fd-overlay" id="usuarioDenunciaOverlay">
+      <div
+        class="fd-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="udTitulo"
+      >
+        <button
+          class="fd-fechar"
+          id="usuarioDenunciaFechar"
+          aria-label="Fechar"
+        >
+          ✕
+        </button>
+        <h3 id="udTitulo">Denunciar usuário</h3>
+        <p class="fd-dominio">Denúncia sobre <strong id="udNome"></strong></p>
+        <label class="fd-campo">
+          <span>Motivo da denúncia</span>
+          <select id="udMotivo">
+            <option value="">Selecione um motivo…</option>
+            <option value="conteudo_ofensivo">
+              Conteúdo ofensivo ou discurso de ódio
+            </option>
+            <option value="assedio">Assédio ou ataque pessoal</option>
+            <option value="spam">Spam ou propaganda</option>
+            <option value="desinformacao">Espalha desinformação</option>
+            <option value="outro">Outro</option>
+          </select>
+        </label>
+        <label class="fd-campo">
+          <span>Comentário (opcional)</span>
+          <textarea
+            id="udComentario"
+            maxlength="1000"
+            rows="4"
+            placeholder="Conte mais sobre o problema com este usuário…"
+          ></textarea>
+        </label>
+        <p class="fd-status" id="udStatus" aria-live="polite"></p>
+        <div class="fd-acoes">
+          <button
+            class="fd-cancelar"
+            id="usuarioDenunciaCancelar"
+            type="button"
+          >
+            Cancelar
+          </button>
+          <button class="fd-enviar" id="usuarioDenunciaEnviar" type="button">
+            Enviar denúncia
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: notícias analisadas de uma fonte -->
+    <div class="fa-overlay" id="fonteAnalisesOverlay">
+      <div
+        class="fa-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="faTitulo"
+      >
+        <button class="fa-fechar" id="fonteAnalisesFechar" aria-label="Fechar">
+          ✕
+        </button>
+        <h3 id="faTitulo">Notícias analisadas</h3>
+        <p class="fa-dominio" id="faDominio"></p>
+        <div class="fa-lista" id="faLista"></div>
       </div>
     </div>
 

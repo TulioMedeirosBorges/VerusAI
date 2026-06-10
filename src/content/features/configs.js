@@ -23,7 +23,7 @@ function aplicarConfigsNoShadow(shadow, open, configs) {
       if (id === "contraste") open.classList.toggle("alto-contraste", ativo);
       if (id === "tema") {
         open.classList.toggle("tema-escuro", ativo);
-        var img = shadow.querySelector(".circleTema img");
+        var img = shadow.querySelector("#botaoTema .icon-tema");
         if (img) img.src = ativo ? _iconSun : _iconDarkmode;
       }
       if (id === "leitornoticias") {

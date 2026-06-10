@@ -69,49 +69,60 @@ aside {
   padding: 0 10px;
 }
 
-.retangleTema {
-  background: #d9d9d9;
-  width: 45px;
-  height: 20px;
-  border-radius: 20px;
-  position: relative;
-  display: flex;
+.botaoTema {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
   align-items: center;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.circleTema {
-  background: black;
-  width: 25px;
-  height: 25px;
+  justify-content: center;
+  padding: 0;
+  border: none;
   border-radius: 50%;
-  position: absolute;
-  left: -5px;
-  z-index: 200;
+  background: #d9d9d9;
   cursor: pointer;
+  overflow: hidden;
   transition:
-    left 0.3s ease,
-    background 0.3s ease;
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
-aside.alto-contraste .retangleTema {
-  background: #444;
+.botaoTema:hover {
+  transform: translateY(-1px);
 }
 
-aside.alto-contraste .circleTema {
-  background: #ffff00;
+.botaoTema .icon-tema {
+  width: 18px;
+  height: 18px;
+  display: block;
+  pointer-events: none;
 }
 
-aside.tema-escuro .circleTema {
-  left: 25px;
-  background: white;
+.botaoTema.girando .icon-tema {
+  animation: girarTema 0.45s ease;
 }
 
-.circleTema img {
-  padding: 5px;
-  width: 100%;
-  height: 100%;
+@keyframes girarTema {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(0.55);
+    opacity: 0.6;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 1;
+  }
+}
+
+aside.alto-contraste .botaoTema {
+  background: #000;
+  border: 1.5px solid #ffff00;
+}
+
+aside.alto-contraste .botaoTema .icon-tema {
+  filter: invert(83%) sepia(94%) saturate(2473%) hue-rotate(1deg) brightness(108%)
+    contrast(106%);
 }
 
 #chatMensagens {
@@ -151,6 +162,7 @@ aside.tema-escuro .circleTema {
 }
 
 .chatFooter {
+  position: relative;
   display: flex;
   align-items: flex-end;
   flex: 0 0 auto;
@@ -158,6 +170,136 @@ aside.tema-escuro .circleTema {
   padding: 10px;
   border-top: 1px solid;
   border-radius: 0 0 20px 20px;
+}
+
+/* ── Lembrete sutil dos comandos no topo do chat ── */
+.chatComandosDica {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px 8px;
+}
+
+.chatComandosDica:empty {
+  display: none;
+}
+
+.chatDicaLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--texto-secundario, #999);
+  opacity: 0.7;
+}
+
+.chatDicaChip {
+  border: 1px solid var(--borda-item, #eee);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto-secundario, #888);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 1px 9px;
+  opacity: 0.7;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.chatDicaChip:hover {
+  opacity: 1;
+  border-color: var(--verus-red, #d3392d);
+  color: var(--verus-red, #d3392d);
+}
+
+/* ── Menu de comandos do chat (autocomplete "@") ── */
+.chatComandos {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: calc(100% + 6px);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 264px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1.5px solid var(--borda-item, #ddd);
+  border-radius: 12px;
+  background: var(--bg, #fff);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.chatComandos.escondido {
+  display: none;
+}
+
+.chatComandosTitulo {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--texto-secundario, #888);
+  padding: 4px 8px 6px;
+}
+
+.chatComandoItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--texto, #111);
+  cursor: pointer;
+  padding: 8px;
+  font: inherit;
+}
+
+.chatComandoItem:hover,
+.chatComandoItem.ativo {
+  background: var(--bg-secondary, #f1f1f1);
+}
+
+.chatComandoIcone {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--bg-input, #f4f4f4);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.chatComandoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chatComandoTexto strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--verus-red, #d3392d);
+}
+
+.chatComandoTexto small {
+  font-size: 12px;
+  color: var(--texto-secundario, #666);
+  overflow-wrap: anywhere;
 }
 
 .chatToolbar {
@@ -199,6 +341,14 @@ aside.tema-escuro .circleTema {
 #chatHistoricoFechar:hover,
 #chatHistoricoLimpar:hover {
   border-color: var(--verus-red, #d3392d);
+}
+
+.verusSiteLink {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .chatHistoricoPanel {
@@ -1012,6 +1162,41 @@ input.input-erro {
   font-size: 0.8rem;
 }
 
+.login_popup_site {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.login_popup_site a {
+  color: var(--verus-red, #d3392d);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.login_popup_site a:hover {
+  text-decoration: underline;
+}
+
+.menuConfigSite {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--borda-item, #ddd);
+  text-align: center;
+}
+
+.menuConfigSite a {
+  color: var(--verus-red, #d3392d);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.menuConfigSite a:hover {
+  text-decoration: underline;
+}
+
 .icon_googlelo_login {
   width: 15px;
   height: 15px;
@@ -1530,30 +1715,24 @@ aside * {
     brightness(104%) contrast(92%);
 }
 
-.retangleTema {
-  width: 44px;
-  height: 22px;
-  border: 1.5px solid rgba(244, 236, 223, 0.48);
+.botaoTema {
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid rgba(244, 236, 223, 0.45);
   border-radius: 2px;
-  background: rgba(244, 236, 223, 0.16);
-  padding: 2px;
+  background: rgba(244, 236, 223, 0.08);
 }
 
-.circleTema {
-  width: 16px;
-  height: 16px;
-  left: 3px;
-  background: var(--verus-cream);
+.botaoTema:hover {
+  background: var(--verus-red);
+  border-color: var(--verus-red);
+  transform: translateY(-1px);
 }
 
-aside.tema-escuro .circleTema {
-  left: 23px;
-  background: var(--verus-cream);
-}
-
-.circleTema img {
-  padding: 3px;
-  filter: none;
+.botaoTema .icon-tema {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(1);
 }
 
 #chatMensagens {
@@ -1610,11 +1789,17 @@ aside.tema-escuro .circleTema {
 #chatEnviar {
   width: 40px;
   height: 40px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 2px solid var(--verus-red);
   border-radius: 2px;
   background: var(--verus-red);
   color: var(--verus-cream);
   font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1;
   font-weight: 700;
   transition:
     background 0.2s ease,
@@ -2270,14 +2455,21 @@ aside.alto-contraste .mensagemIA a {
   background: var(--bg);
 }
 
-.chatToolbar::before {
-  content: "VerusIA";
+#verusSiteLink.verusSiteLink {
   color: var(--texto-secundario);
   font-family: var(--font-mono);
   font-size: calc(10 / 14 * var(--font-size, 14px));
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+#verusSiteLink.verusSiteLink:hover {
+  color: var(--verus-red);
+  text-decoration: none;
 }
 
 #chatHistoricoBtn,
@@ -2750,7 +2942,7 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 a:focus-visible,
-.retangleTema:focus-visible,
+.botaoTema:focus-visible,
 .retangleConfig:focus-visible {
   outline: 2px solid var(--verus-red);
   outline-offset: 2px;

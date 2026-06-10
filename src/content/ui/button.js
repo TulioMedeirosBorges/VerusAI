@@ -423,6 +423,33 @@ function CreateButton() {
       progresso.remove();
       criarSidebar({ _payload: payload, _resultado: resultado }, false);
       button.textContent = "Fechar";
+
+      // Destaque das claims direto na pagina (estilo Grammarly anti-fake)
+      try {
+        var buildFinal =
+          resultado &&
+          (resultado.etapa11_buildFinal ||
+            resultado.etapa10_buildFinal ||
+            resultado.buildFinal ||
+            (resultado.etapa === "buildFinal" ? resultado : null));
+        if (
+          buildFinal &&
+          window.VerusClaimHighlight &&
+          typeof window.VerusClaimHighlight.aplicar === "function"
+        ) {
+          window.VerusClaimHighlight.aplicar(buildFinal);
+        }
+        // Marca tambem os links da pagina que apontam para noticias que o
+        // VerusAI ja analisou (veredito + score no tooltip).
+        if (
+          window.VerusClaimHighlight &&
+          typeof window.VerusClaimHighlight.marcarFontes === "function"
+        ) {
+          window.VerusClaimHighlight.marcarFontes();
+        }
+      } catch (err) {
+        console.warn("[VerusAI] destaque de claims falhou:", err);
+      }
     } catch (e) {
       progresso.fail(e.message);
       await _esperar(2600);

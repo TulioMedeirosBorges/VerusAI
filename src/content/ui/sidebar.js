@@ -4,6 +4,8 @@ var OVERLAY_ID = "sidebar_overlay";
 var BTN_ID = "btn_id";
 var BTN_CHAT_ID = "btn_chat_id";
 
+var VERUS_SITE_URL = "http://localhost:3000/site";
+
 var logo = chrome.runtime.getURL("/assets/images/VerusIAAtivo 1.svg");
 var iconDarkmode = chrome.runtime.getURL("assets/icons/dark_mode.svg");
 var iconSun = chrome.runtime.getURL("assets/icons/Sun.svg");
@@ -85,21 +87,23 @@ function criarSidebar(analysis, mostrarLoginImediato) {
     logo +
     '" alt="" /></div>' +
     '<div class="tm_stt">' +
-    '<div class="tema"><div class="retangleTema"><div class="circleTema"><img src="' +
+    '<div class="tema"><button id="botaoTema" class="botaoTema" type="button" aria-label="Alternar tema"><img src="' +
     iconDarkmode +
-    '" class="icon-darkmode" /></div></div></div>' +
+    '" class="icon-tema" alt="" /></button></div>' +
     '<div class="menu"><img id="settings" src="' +
     iconSettings +
     '" class="icon-settings" /></div>' +
     "</div>" +
     "</header>" +
     '<div class="chatToolbar">' +
-    '<button id="chatHistoricoBtn" type="button" aria-label="Ver historico do chat">' +
+    '<a id="verusSiteLink" class="verusSiteLink" href="' +
+    VERUS_SITE_URL +
+    '" target="_blank" rel="noopener noreferrer" aria-label="Abrir o site do VerusIA">VerusIA</a>' +
+    '<button id="chatHistoricoBtn" type="button" aria-label="Ver historico do chat" title="Histórico do chat">' +
     '<svg class="chatHistoricoIcon" viewBox="0 0 24 24" aria-hidden="true">' +
     '<circle cx="12" cy="12" r="9"></circle>' +
     '<path d="M12 7v5l3 2"></path>' +
     "</svg>" +
-    "<span>Historico</span>" +
     "</button>" +
     "</div>" +
     '<div id="chatHistoricoPanel" class="chatHistoricoPanel escondido">' +
@@ -108,8 +112,9 @@ function criarSidebar(analysis, mostrarLoginImediato) {
     '<button id="chatHistoricoLimpar" type="button">Limpar historico</button>' +
     "</div>" +
     '<div id="chatMensagens"></div>' +
+    '<div id="chatComandosDica" class="chatComandosDica"></div>' +
     '<footer class="chatFooter">' +
-    '<textarea id="chatInput" rows="1" placeholder="Pergunte sobre uma noticia..."></textarea>' +
+    '<textarea id="chatInput" rows="1" placeholder="Faça sua pergunta..."></textarea>' +
     '<button id="chatEnviar" type="button" aria-label="Enviar pergunta">&rarr;</button>' +
     "</footer>" +
     '<div id="menuConfig" class="menuConfig escondido">' +
@@ -127,6 +132,9 @@ function criarSidebar(analysis, mostrarLoginImediato) {
     '<div class="menuConfigItem"><p>Tema escuro</p><div class="retangleConfig" data-config="tema"><div class="circleConfig"></div></div></div>' +
     '<div class="menuConfigItem"><p>Leitor de Notícia</p><div class="retangleConfig" data-config="leitornoticias"><div class="circleConfig"></div></div></div>' +
     "</div>" +
+    '<div class="menuConfigSite"><a href="' +
+    VERUS_SITE_URL +
+    '" target="_blank" rel="noopener noreferrer">Visite o site do VerusIA</a></div>' +
     "</div>";
 
   shadow.appendChild(open);
@@ -134,6 +142,7 @@ function criarSidebar(analysis, mostrarLoginImediato) {
   // Aplica configs locais imediatamente para evitar flash de tema errado
   storageGet("configs").then(function (r) {
     if (r.configs) aplicarConfigsNoShadow(shadow, open, r.configs);
+    atualizarIconeTema();
   });
 
   var chatInput = shadow.getElementById("chatInput");
@@ -193,7 +202,10 @@ function criarSidebar(analysis, mostrarLoginImediato) {
       var ativo = btn.classList.contains("ativo-config");
 
       if (id === "contraste") open.classList.toggle("alto-contraste", ativo);
-      if (id === "tema") open.classList.toggle("tema-escuro", ativo);
+      if (id === "tema") {
+        open.classList.toggle("tema-escuro", ativo);
+        atualizarIconeTema();
+      }
       if (id === "leitornoticias") {
         if (ativo) ativarLeitor();
         else desativarLeitor();
@@ -204,18 +216,41 @@ function criarSidebar(analysis, mostrarLoginImediato) {
   });
 
   // Botão de tema rápido no header
-  var retangleTema = shadow.querySelector(".retangleTema");
-  var iconTemaImg = shadow.querySelector(".circleTema img");
+  var botaoTema = shadow.getElementById("botaoTema");
+  var iconTemaImg = botaoTema ? botaoTema.querySelector(".icon-tema") : null;
 
-  retangleTema.addEventListener("click", function () {
-    var temaAtivo = open.classList.toggle("tema-escuro");
-    iconTemaImg.src = temaAtivo ? iconSun : iconDarkmode;
-    var toggleTema = shadow.querySelector(
-      ".retangleConfig[data-config='tema']",
-    );
-    if (toggleTema) toggleTema.classList.toggle("ativo-config", temaAtivo);
-    salvarConfigs(shadow, fontSize, isContextValid);
-  });
+  function atualizarIconeTema() {
+    if (!iconTemaImg) return;
+    iconTemaImg.src = open.classList.contains("tema-escuro")
+      ? iconSun
+      : iconDarkmode;
+  }
+
+  if (botaoTema) {
+    botaoTema.addEventListener("animationend", function () {
+      botaoTema.classList.remove("girando");
+    });
+
+    botaoTema.addEventListener("click", function () {
+      var temaAtivo = open.classList.toggle("tema-escuro");
+
+      // reinicia a animação de giro
+      botaoTema.classList.remove("girando");
+      void botaoTema.offsetWidth;
+      botaoTema.classList.add("girando");
+
+      // troca o ícone no meio do giro (quando ele está menor)
+      setTimeout(function () {
+        if (iconTemaImg) iconTemaImg.src = temaAtivo ? iconSun : iconDarkmode;
+      }, 200);
+
+      var toggleTema = shadow.querySelector(
+        ".retangleConfig[data-config='tema']",
+      );
+      if (toggleTema) toggleTema.classList.toggle("ativo-config", temaAtivo);
+      salvarConfigs(shadow, fontSize, isContextValid);
+    });
+  }
 
   // Settings
   shadow.getElementById("settings").addEventListener("click", function () {
@@ -244,6 +279,10 @@ function criarSidebar(analysis, mostrarLoginImediato) {
 
   // Renderiza análise
   if (analysis) {
+    // Histórico fica apenas no modo chat; oculta o botão quando o sidebar
+    // abre direto com o resultado de uma análise.
+    var histToolbarBtn = shadow.getElementById("chatHistoricoBtn");
+    if (histToolbarBtn) histToolbarBtn.style.display = "none";
     _renderAnalysis(shadow, open, analysis, chatMensagens);
   }
 
@@ -280,6 +319,7 @@ function criarSidebar(analysis, mostrarLoginImediato) {
   // Carrega configs ao abrir (apenas uma vez)
   carregarConfigs(shadow, open, isContextValid).then(function (configs) {
     if (configs && configs.fontSize !== undefined) fontSize = configs.fontSize;
+    atualizarIconeTema();
   });
 }
 

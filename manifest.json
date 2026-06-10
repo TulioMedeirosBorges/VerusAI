@@ -42,9 +42,11 @@
         "src/content/features/reader.js",
         "src/content/features/configs.js",
         "src/content/features/link-preview.js",
+        "src/content/features/claim-highlight.js",
         "src/content/ui/popup-login.js",
         "src/content/chat/chat.js",
         "src/content/ui/sidebar.js",
+        "src/content/features/share-verus.js",
         "src/content/ui/button.js",
         "src/content/ui/selo-fonte.js",
         "src/content/content.js"

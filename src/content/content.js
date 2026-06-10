@@ -13,6 +13,17 @@
 
   init();
 
+  // Destaque automatico: se a pagina atual ja foi analisada antes, busca o
+  // resultado salvo e marca as claims no texto (sem reanalisar).
+  if (
+    window.VerusClaimHighlight &&
+    typeof window.VerusClaimHighlight.autoDestacar === "function"
+  ) {
+    setTimeout(function () {
+      window.VerusClaimHighlight.autoDestacar();
+    }, 1200);
+  }
+
   const AUTH_BRIDGE_ORIGINS = new Set([
     "http://localhost:3000",
     "http://localhost:3001",
