@@ -1,46 +1,22 @@
-const { classifyPage } = require("./ai-services/classifyPage.js");
-const { extractClaims } = require("./ai-services/extractClaims.js");
-const { detectClaimType } = require("./ai-services/detectClaimType.js");
+const { classifyPage } = require("../ai-services/classifyPage.js");
+const { extractClaims } = require("../ai-services/extractClaims.js");
+const { detectClaimType } = require("../ai-services/detectClaimType.js");
 const {
   generateSearchQueries,
-} = require("./ai-services/generateSearchQueries.js");
-const { webSearchCandidates } = require("./ai-services/webSearchCandidates.js");
+} = require("../ai-services/generateSearchQueries.js");
+const { webSearchCandidates } = require("../ai-services/webSearchCandidates.js");
 const {
   verifyWebSearchCandidates,
-} = require("./ai-services/verifyWebSearchCandidates.js");
+} = require("../ai-services/verifyWebSearchCandidates.js");
 const { routeVerifiedCandidates } = require("./routeVerifiedCandidates.js");
 const {
   officialFontesRouterBatch,
-} = require("./ai-services/officialFontesRouter.js");
+} = require("../ai-services/officialFontesRouter.js");
 const {
   finalPipelineReview,
-} = require("./ai-services/finalPipelineReview.js");
-const { claimAudit } = require("./ai-services/claimAudit.js");
-const { buildFinal } = require("./ai-services/buildFinal.js");
-
-function normalizeApiName(candidate) {
-  return (
-    candidate?.api ??
-    candidate?.API ??
-    candidate?.api_name ??
-    candidate?.apiName ??
-    candidate?.apiname ??
-    null
-  );
-}
-
-function normalizeCandidateQuery(candidate) {
-  return (
-    candidate?.query ??
-    candidate?.motivo_api ??
-    candidate?.motivo ??
-    candidate?.url ??
-    candidate?.candidate_url ??
-    candidate?.candidateUrl ??
-    candidate?.candidate ??
-    ""
-  );
-}
+} = require("../ai-services/finalPipelineReview.js");
+const { claimAudit } = require("../ai-services/claimAudit.js");
+const { buildFinal } = require("../ai-services/buildFinal.js");
 
 function normalizeClaimTypeIndividual(
   contextoGeral,
@@ -480,12 +456,25 @@ async function runPipeline(pageData, options = {}) {
 
   let queriesPorClaim = [];
 
+  // A IA pode devolver as claims em quantidade/ordem diferente da entrada;
+  // casa pelo claimid quando ele vem na resposta e só usa o índice como fallback.
+  const montarQueriesPorClaim = (itensQueries) =>
+    itensQueries.map((claimResult, index) => {
+      const idResultado =
+        claimResult.claimid ?? claimResult.claim_id ?? claimResult.claimId;
+      const claimOriginal =
+        claims.claims.find((c) => c.id === idResultado) ??
+        claims.claims[index] ??
+        {};
+      return {
+        claimid: claimOriginal.id ?? idResultado ?? null,
+        claimtexto: claimOriginal.texto ?? "",
+        ...claimResult,
+      };
+    });
+
   if (resultadoQueries.ok && Array.isArray(resultadoQueries.claims)) {
-    queriesPorClaim = resultadoQueries.claims.map((claimResult, index) => ({
-      claimid: claims.claims[index].id,
-      claimtexto: claims.claims[index].texto,
-      ...claimResult,
-    }));
+    queriesPorClaim = montarQueriesPorClaim(resultadoQueries.claims);
     console.log(
       `[runPipeline] ✅ Queries geradas com sucesso para ${queriesPorClaim.length} claims!`,
     );
@@ -495,11 +484,7 @@ async function runPipeline(pageData, options = {}) {
       resultadoQueries.mensagem,
     );
     if (Array.isArray(resultadoQueries.claims)) {
-      queriesPorClaim = resultadoQueries.claims.map((claimResult, index) => ({
-        claimid: claims.claims[index].id,
-        claimtexto: claims.claims[index].texto,
-        ...claimResult,
-      }));
+      queriesPorClaim = montarQueriesPorClaim(resultadoQueries.claims);
     } else {
       queriesPorClaim = claims.claims.map((claim) => ({
         claimid: claim.id,

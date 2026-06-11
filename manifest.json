@@ -25,8 +25,7 @@
       "resources": [
         "assets/images/*",
         "assets/icons/*",
-        "src/shared/content.css",
-        "src/shared/sidebar.css"
+        "src/extension/shared/sidebar.css"
       ],
       "matches": ["<all_urls>"]
     }
@@ -35,31 +34,31 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "src/content/services/storage.js",
-        "src/content/services/api.js",
-        "src/content/services/extractor.js",
-        "src/content/state.js",
-        "src/content/features/reader.js",
-        "src/content/features/configs.js",
-        "src/content/features/link-preview.js",
-        "src/content/features/claim-highlight.js",
-        "src/content/ui/popup-login.js",
-        "src/content/chat/chat.js",
-        "src/content/ui/sidebar.js",
-        "src/content/features/share-verus.js",
-        "src/content/ui/button.js",
-        "src/content/ui/selo-fonte.js",
-        "src/content/content.js"
+        "src/extension/content/services/storage.js",
+        "src/extension/content/services/api.js",
+        "src/extension/content/services/extractor.js",
+        "src/extension/content/state.js",
+        "src/extension/content/features/reader.js",
+        "src/extension/content/features/configs.js",
+        "src/extension/content/features/link-preview.js",
+        "src/extension/content/features/claim-highlight.js",
+        "src/extension/content/ui/popup-login.js",
+        "src/extension/content/chat/chat.js",
+        "src/extension/content/ui/sidebar.js",
+        "src/extension/content/features/share-verus.js",
+        "src/extension/content/ui/button.js",
+        "src/extension/content/ui/selo-fonte.js",
+        "src/extension/content/content.js"
       ],
       "run_at": "document_idle"
     }
   ],
   "background": {
-    "service_worker": "src/background/background.js"
+    "service_worker": "src/extension/background/background.js"
   },
   "action": {
     "default_title": "Analiser FakeNews",
-    "default_popup": "src/pages/login/login.html",
+    "default_popup": "src/extension/pages/login/login.html",
     "default_icon": {
       "16": "assets/icons/IconVerusAi.png",
       "32": "assets/icons/IconVerusAi.png",

@@ -5,6 +5,7 @@ const fetch = (...args) =>
   import("node-fetch").then(({ default: f }) => f(...args));
 
 const { normalizeFinalPipelineForAI } = require("./finalPipelineReview.js");
+const { getOutputText } = require("./openaiText.js");
 
 function safeArray(value) {
   if (Array.isArray(value)) return value;
@@ -174,20 +175,6 @@ function extractJsonFromText(text) {
   }
 
   return text.trim();
-}
-
-function getOutputText(data) {
-  if (data?.output_text) return data.output_text;
-
-  if (Array.isArray(data?.output)) {
-    return data.output
-      .flatMap((item) => item.content || [])
-      .filter((content) => content.type === "output_text")
-      .map((content) => content.text)
-      .join("");
-  }
-
-  return "";
 }
 
 function normalizeUrl(value) {

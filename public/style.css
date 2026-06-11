@@ -4522,8 +4522,6 @@ body {
   border-bottom: 2px solid rgba(23, 23, 21, 0.12);
 }
 
-/* Abaixo de ~1000px as 8 abas não cabem numa linha; deixa quebrar para
-   nenhuma ficar escondida. */
 @media (max-width: 1000px) {
   .tabs {
     flex-wrap: wrap;

@@ -5,41 +5,7 @@
 const fetch = (...args) =>
   import("node-fetch").then(({ default: f }) => f(...args));
 
-function getOutputText(data) {
-  if (data?.output_text) return data.output_text;
-
-  if (Array.isArray(data?.output)) {
-    return data.output
-      .flatMap((item) => item.content || [])
-      .filter((content) => content.type === "output_text")
-      .map((content) => content.text)
-      .join("")
-      .trim();
-  }
-
-  return "";
-}
-
-function normalizeAIAnswer(text) {
-  const raw = String(text || "").trim();
-  if (!raw) return "";
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (typeof parsed === "string") return parsed;
-    if (parsed && typeof parsed === "object") {
-      return (
-        parsed.resposta ||
-        parsed.answer ||
-        parsed.mensagem ||
-        parsed.message ||
-        raw
-      );
-    }
-  } catch (err) {}
-
-  return raw;
-}
+const { getOutputText, normalizeAIAnswer } = require("./openaiText.js");
 
 // Variaveis do prompt precisam ser strings. Se vier um objeto (o buildFinal),
 // serializamos para JSON; se ja vier uma string, usamos como esta.

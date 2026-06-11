@@ -362,7 +362,7 @@
                   <tr>
                     <td>RF02</td>
                     <td>Capturar conteudo da pagina aberta no navegador.</td>
-                    <td>PageExtractor em src/content/services/extractor.js.</td>
+                    <td>PageExtractor em src/extension/content/services/extractor.js.</td>
                   </tr>
                   <tr>
                     <td>RF03</td>
@@ -382,7 +382,7 @@
                   <tr>
                     <td>RF06</td>
                     <td>Permitir chat sobre noticias e guardar historico.</td>
-                    <td>/chat/noticias, /chat/historico e src/content/chat.</td>
+                    <td>/chat/noticias, /chat/historico e src/extension/content/chat.</td>
                   </tr>
                   <tr>
                     <td>RF07</td>
@@ -632,7 +632,7 @@
             </article>
             <article>
               <h3>Servidor</h3>
-              <p>src/server/server.js centraliza rotas, banco, jobs assíncronos e site estatico.</p>
+              <p>src/server/server.js registra as rotas; a lógica fica separada em src/server/routes e src/server/services.</p>
             </article>
             <article>
               <h3>Publicacao</h3>
@@ -670,19 +670,19 @@
                 </tr>
                 <tr>
                   <td>Content</td>
-                  <td>src/content/content.js</td>
+                  <td>src/extension/content/content.js</td>
                   <td>Inicializa a extensao na pagina e observa mudancas no DOM.</td>
                   <td>Possui guard para evitar inicializacao duplicada.</td>
                 </tr>
                 <tr>
                   <td>Extracao</td>
-                  <td>src/content/services/extractor.js</td>
+                  <td>src/extension/content/services/extractor.js</td>
                   <td>Coleta texto principal, metadados, links e estrategias por site.</td>
                   <td>Inclui tratamentos para YouTube, X/Twitter, Instagram e Reddit.</td>
                 </tr>
                 <tr>
                   <td>UI da extensao</td>
-                  <td>src/content/ui/sidebar.js</td>
+                  <td>src/extension/content/ui/sidebar.js</td>
                   <td>Renderiza painel lateral, resultado final, menu e configuracoes.</td>
                   <td>Usa Shadow DOM para isolar estilos da pagina visitada.</td>
                 </tr>

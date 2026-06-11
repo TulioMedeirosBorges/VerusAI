@@ -301,6 +301,25 @@ async function verifyWebSearchCandidates(
       );
     }
 
+    // A IA nem sempre ecoa o claimid; sem ele o roteamento agrupa o item como
+    // "unknown" e a claim perde texto/tipo nas etapas seguintes. Como cada URL
+    // candidata veio de uma claim específica, recupera o vínculo pela URL.
+    if (Array.isArray(resultado.claims)) {
+      const claimIdPorUrl = new Map();
+      normalized.claims.forEach((claim) => {
+        (claim.candidaturas || []).forEach((candidatura) => {
+          if (candidatura.url && !claimIdPorUrl.has(candidatura.url)) {
+            claimIdPorUrl.set(candidatura.url, claim.claimId);
+          }
+        });
+      });
+      resultado.claims = resultado.claims.map((item) =>
+        item.claimid == null && claimIdPorUrl.has(item.url)
+          ? { ...item, claimid: claimIdPorUrl.get(item.url) }
+          : item,
+      );
+    }
+
     console.log(
       `[verifyWebSearchCandidates] ✅ Resposta da IA:`,
       JSON.stringify(resultado, null, 2),

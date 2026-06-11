@@ -77,7 +77,7 @@ function criarSidebar(analysis, mostrarLoginImediato) {
 
   var styleLink = document.createElement("link");
   styleLink.rel = "stylesheet";
-  styleLink.href = chrome.runtime.getURL("src/shared/sidebar.css");
+  styleLink.href = chrome.runtime.getURL("src/extension/shared/sidebar.css");
   shadow.appendChild(styleLink);
 
   var open = document.createElement("aside");
