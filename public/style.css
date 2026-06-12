@@ -4589,6 +4589,58 @@ body {
   margin-top: -3px;
 }
 
+/* Ícones SVG via máscara: herdam a cor do botão (hover/ativo) */
+.btn-ico {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+
+.ico-verdadeiro {
+  -webkit-mask-image: url("/assets/icons/greencheckbox.svg");
+  mask-image: url("/assets/icons/greencheckbox.svg");
+  background-color: #1a7a3c;
+}
+.ico-misto {
+  -webkit-mask-image: url("/assets/icons/Warningsite.svg");
+  mask-image: url("/assets/icons/Warningsite.svg");
+  background-color: #b07800;
+}
+.ico-falso {
+  -webkit-mask-image: url("/assets/icons/xbutton.svg");
+  mask-image: url("/assets/icons/xbutton.svg");
+  background-color: var(--red);
+}
+
+/* No hover/ativo o fundo do botão assume a cor do veredito;
+   o ícone vira creme para manter contraste */
+.filtro-btn:hover .btn-ico,
+.filtro-btn.ativo .btn-ico {
+  background-color: var(--cream);
+}
+.ico-aprender {
+  -webkit-mask-image: url("/assets/icons/Aprenda.svg");
+  mask-image: url("/assets/icons/Aprenda.svg");
+}
+.ico-comunidade {
+  -webkit-mask-image: url("/assets/icons/Comunidade.svg");
+  mask-image: url("/assets/icons/Comunidade.svg");
+}
+.ico-parceiros {
+  -webkit-mask-image: url("/assets/icons/parceiros.svg");
+  mask-image: url("/assets/icons/parceiros.svg");
+}
+
+
 /* Esconde o conteúdo de "Análises" quando outra aba está ativa */
 body.view-aovivo .hero,
 body.view-aovivo .ticker,
