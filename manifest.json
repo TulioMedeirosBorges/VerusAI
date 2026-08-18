@@ -48,6 +48,7 @@
         "src/extension/content/features/share-verus.js",
         "src/extension/content/ui/button.js",
         "src/extension/content/ui/selo-fonte.js",
+        "src/extension/content/ui/selo-comunidade.js",
         "src/extension/content/content.js"
       ],
       "run_at": "document_idle"

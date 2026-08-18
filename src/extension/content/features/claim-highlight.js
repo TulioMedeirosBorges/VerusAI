@@ -868,6 +868,16 @@
 
     // 2) busca o detalhe (buildFinal com as claims) e aplica o destaque.
     var urlSalva = achou.url || location.href;
+
+    // Noticia ja analisada: mostra tambem o aviso com o feedback (like/
+    // dislike/comentarios) que a comunidade ja deixou nessa mesma URL.
+    if (
+      window.VerusSeloComunidade &&
+      typeof window.VerusSeloComunidade.criar === "function"
+    ) {
+      window.VerusSeloComunidade.criar(urlSalva, achou.titulo || document.title);
+    }
+
     var resDet;
     try {
       resDet = await _fetchBackground(
