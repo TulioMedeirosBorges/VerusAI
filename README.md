@@ -6,6 +6,13 @@ extrair afirmações verificáveis, buscar evidências na web e em fontes oficia
 gerar um veredito final com explicação, fontes e nível de confiança — tudo exibido
 numa sidebar injetada na própria página.
 
+> **Aviso:** este é um projeto de faculdade, desenvolvido para fins acadêmicos. A
+> intenção do VerusAI **não é afirmar que uma notícia é 100% verdadeira ou falsa**,
+> e sim ajudar o leitor a analisar melhor o que está lendo. O software verifica
+> cada afirmação da notícia em busca de evidências; quando não encontra evidência
+> suficiente para alguma parte dela, **essa parte não é dada como verdadeira** — ela
+> fica marcada como inconclusiva, em vez de confirmada.
+
 ## Demonstração
 
 ### Página inicial da Verus
