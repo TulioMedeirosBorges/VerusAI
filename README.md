@@ -6,6 +6,20 @@ extrair afirmações verificáveis, buscar evidências na web e em fontes oficia
 gerar um veredito final com explicação, fontes e nível de confiança — tudo exibido
 numa sidebar injetada na própria página.
 
+## Demonstração
+
+### Página inicial da Verus
+
+![Página inicial da Verus](assets/gifs/Gif_da_pagina_inicial_da_verus.gif)
+
+*Visão geral da página inicial do site da Verus.*
+
+### Extensão em funcionamento
+
+![Extensão em funcionamento](assets/gifs/Gif_da_extensao_funcionando.gif)
+
+*A extensão analisando uma notícia diretamente na página, do clique no botão até o veredito na sidebar.*
+
 ## Visão geral
 
 1. O usuário navega até uma notícia e clica no botão flutuante que a extensão
